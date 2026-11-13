@@ -104,7 +104,7 @@
 
   // ---------------------------------------------------------------- about: the city, blurred, behind the line
   let aboutDone = false; function aboutCity() { if (aboutDone || !window.City) return; const cv = $('#cityCv'), box = cv.parentElement; City.load().then(() => { const W = box.clientWidth, H = box.clientHeight; if (!W) return; aboutDone = true;
-    const r = $('.ab-h b').getBoundingClientRect(), b = box.getBoundingClientRect(), cx = r.left - b.left + r.width / 2, cy = r.top - b.top + r.height / 2, ax = r.width / 2 + 60, ay = 70;
+    const r = $('.ab-h b').getBoundingClientRect(), b = box.getBoundingClientRect(), k = b.width / W || 1, cx = (r.left - b.left + r.width / 2) / k, cy = (r.top - b.top + r.height / 2) / k, ax = r.width / k / 2 + 60, ay = 70;
     const g = City.build(W, H, W < 700 ? 8 : 10, (x, y) => { const q = Math.hypot((x - cx) / ax, (y - cy) / ay), t = Math.min(1, Math.max(0, (q - .8) / .5)); return t * t * (3 - 2 * t); }); City.live(cv, g); }).catch(() => { }); }
 
   // ---------------------------------------------------------------- the token (only once it exists)

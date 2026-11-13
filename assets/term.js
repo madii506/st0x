@@ -69,7 +69,7 @@
     if (S.tf === '1d') { const p = et(t * 1000 + 12 * 3600e3), s = session(p.y, p.m, p.d, p.wd); return s.closed; }
     const mid = (t + TFS[S.tf] / 2) * 1000; return !openAt(mid); }
   function niceStep(r) { const p = Math.pow(10, Math.floor(Math.log10(r))), n = r / p; return (n < 1.5 ? 1 : n < 3 ? 2 : n < 7 ? 5 : 10) * p; }
-  function drawChart() { const cv = $('#chCv'), box = cv.parentElement.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1), W = box.width, H = box.height; if (!W || !H) return;
+  function drawChart() { const cv = $('#chCv'), box = cv.parentElement, dpr = Math.min(2, devicePixelRatio || 1), W = box.clientWidth, H = box.clientHeight; if (!W || !H) return;
     cv.width = W * dpr; cv.height = H * dpr; const x = cv.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, W, H);
     const rows = CH.rows; if (!rows.length) return; const R = 66, B = 24, T = 18, vh = (H - B - T) * .14, ph = H - B - T - vh - 8;
     const lo = Math.min(...rows.map(r => r.l)), hi = Math.max(...rows.map(r => r.h)), pad = (hi - lo) * .08 || hi * .01, a = lo - pad, b = hi + pad;

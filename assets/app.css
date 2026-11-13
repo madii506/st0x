@@ -101,7 +101,7 @@ body{background:#fff}
 }
 @media (min-width:901px){.mview{display:none}}
 #introCur{left:0!important;top:0!important;margin:0!important;width:14px;height:26px;transform-origin:50% 50%;will-change:transform}
-#intro{background:#070908}
+#intro{background:#fff}
 
 /* ===================================================================== clean pass */
 :root{--line:#eceeed;--soft:#f7f8f8}

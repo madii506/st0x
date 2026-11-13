@@ -1,149 +1,159 @@
-/* st0x intro: no words, no chart (~7.8s).
-   a 24-hour dial assembles in the dark, with the week (168 hours) as a ring around it.
-   the hand sweeps wall street's day, 9:30 to 4:00. the bell rings and a shutter rolls down.
-   a green seam splits the shutter; the hand carries on in green, round the whole day and the whole week.
-   the dial closes into the st0x zero, the slash locks in, and you fly through the zero into the terminal. */
+/* st0x intro: white, clean, no words (~7s).
+   a quiet desk with a monitor. someone in a green hoodie walks in, steps behind the chair, turns and sits.
+   the monitor wakes, they type a password, it goes green, a fist goes up,
+   and the camera throws you through the monitor into the terminal. */
 (() => {
-  const BG = '#070908', G = '#1fd26f', WH = '#eef2ef', OFF = '#262c29', GREY = '#58605c';
+  const INK = '#0d0f0e', INK2 = '#3b413e', G = '#12a150', G2 = '#0c7a3b', HOOD = '#0f9147', LINE = '#e1e5e3';
   const TAU = Math.PI * 2, clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v)), lerp = (a, b, t) => a + (b - a) * t, seg = (t, a, b) => clamp((t - a) / (b - a));
-  const io = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, oc = t => 1 - Math.pow(1 - t, 3), ic = t => t * t * t, oq = t => 1 - Math.pow(1 - t, 5);
-  const ob = t => { const c = 1.3, u = t - 1; return 1 + (c + 1) * u * u * u + c * u * u; };
-  const ang = h => -Math.PI / 2 + h / 24 * TAU;
-  const RGB = {}; const rgb = s => RGB[s] || (RGB[s] = [1, 3, 5].map(i => parseInt(s.slice(i, i + 2), 16)));
-  const mix = (a, b, k) => { if (k <= 0) return a; if (k >= 1) return b; const A = rgb(a), B = rgb(b); return `rgb(${Math.round(lerp(A[0], B[0], k))},${Math.round(lerp(A[1], B[1], k))},${Math.round(lerp(A[2], B[2], k))})`; };
-  function grainTile() { const c = document.createElement('canvas'); c.width = c.height = 180; const x = c.getContext('2d'), d = x.createImageData(180, 180);
-    for (let i = 0; i < d.data.length; i += 4) { const v = Math.random() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; } x.putImageData(d, 0, 0); return c; }
+  const io = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, oc = t => 1 - Math.pow(1 - t, 3), oq = t => 1 - Math.pow(1 - t, 5);
+  const ob = t => { const c = 1.5, u = t - 1; return 1 + (c + 1) * u * u * u + c * u * u; };
+  // walking: accelerate, cruise, settle (trapezoid speed), so feet never skate at the ends
+  const walkEase = s => { const a = .16, d = .22, v = 1 / (1 - a / 2 - d / 2); return s < a ? v * s * s / (2 * a) : s > 1 - d ? 1 - v * (1 - s) * (1 - s) / (2 * d) : v * (s - a / 2); };
 
-  function play(o) { const { canvas: cv, cursor: cur, app, onDone } = o, W = innerWidth, H = innerHeight, dpr = Math.min(2, devicePixelRatio || 1), ov = cv.parentElement;
+  function play(o) { const { canvas: cv, cursor: cur, app, onDone } = o, W = innerWidth, H = innerHeight, dpr = Math.min(2, devicePixelRatio || 1);
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); const x = cv.getContext('2d'); if (cur) cur.style.opacity = 0;
-    // ---------------- timeline (ms)
-    const T = { ring0: 180, ring1: 900, tk0: 320, wk0: 520, hand0: 1000, s0: 1350, s1: 2650, shut0: 2720, shut1: 3060, seam0: 3150, split0: 3330, g0: 3480, g1: 5000, m0: 5000, m1: 6000, shine0: 6120, shine1: 6640, dive: 6720, end: 7780 };
-    // ---------------- geometry: the dial, the week ring, and the logo zero it becomes (favicon: 38x54 pill, stroke 9, slash 8)
-    const cx = W / 2, cy = H / 2, M = Math.min(W, H), R = M * .25, RO = R * 1.3, RL = M * .12;
-    const hwL = RL * 19 / 27, lwL = RL * 9 / 27, slL = RL * 15.12 / 27, swL = RL * 8 / 27, slashA = Math.atan2(12.5, -8.5);
-    const ihw = hwL - lwL / 2, ihh = RL - lwL / 2, Smax = Math.hypot(W, H) / ihw * 1.08;
-    const NY = []; for (let i = 0; i < 168; i++) { const d = Math.floor(i / 24), h = i % 24; if (d < 5 && h >= 9 && h < 16) NY.push(i); }
-    const nyRank = new Map(NY.map((i, r) => [i, r]));
-    const NS = Math.max(10, Math.round(H / 54)), slH = H / NS;
-    const slat = x.createLinearGradient(0, 0, 0, slH); slat.addColorStop(0, '#151916'); slat.addColorStop(.5, '#0e110f'); slat.addColorStop(1, '#090b0a');
-    const grain = x.createPattern(grainTile(), 'repeat');
-    const P = []; let burst = false;
-    let skip = false, done = false, raf = 0, last = 0; const t0 = performance.now(); let tOff = 0;
-    app.style.transformOrigin = '50% 50%'; app.style.transform = 'scale(.86)';
+    // ---------------- the room
+    const port = W < H, h = Math.min(H * .46, W * .75), FY = H * (port ? .72 : .82), cx = W / 2;
+    const AREA = .187 * h * h, Sw = Math.sqrt(AREA * W / H), Sh = Math.sqrt(AREA * H / W);   // the screen has the page's own shape, so the terminal fits it exactly
+    const deskY = FY - .4 * h, DW = Math.max(Sw * 1.9, 1.15 * h), scrB = deskY - .2 * h, S = { x: cx - Sw / 2, y: scrB - Sh, w: Sw, h: Sh }, Sc = { x: cx, y: scrB - Sh / 2 };
+    const seatY = FY - .26 * h, chairX = cx - (port ? .2 : .26) * h, bez = .012 * h, chin = .03 * h;
+    // ---------------- the walk
+    const x0 = -.35 * h, dist = chairX - x0, nSteps = Math.max(2, Math.round(dist / (.45 * h))), AMP = Math.asin(Math.min(.8, dist / nSteps / (.92 * h)));
+    const T = { walk0: 650 }; T.walk1 = T.walk0 + clamp(dist / (1.3 * h) * 1000, 900, 2000); T.turn = T.walk1; T.sit0 = T.turn + 240; T.sit1 = T.sit0 + 560;
+    T.wake0 = T.sit1 - 120; T.wake1 = T.wake0 + 460; T.type0 = T.wake1 + 380; T.key = 135; T.enter = T.type0 + 6 * T.key + 140; T.ok = T.enter + 70;
+    T.rev0 = T.ok + 520; T.rev1 = T.rev0 + 380; T.push0 = T.rev1 - 120; T.push1 = T.push0 + 1150; T.end = T.push1;
+    const keyAt = i => T.type0 + i * T.key;
+    // ---------------- camera: a slow drift in, then thrown through the screen
+    const Zf = W / Sw, zp = 1.04;
+    let skip = false, done = false, raf = 0; const t0 = performance.now(); let tOff = 0;
+    app.style.transformOrigin = '0 0';
 
-    function emit(px, py, vx, vy, n, life) { for (let i = 0; i < n; i++) P.push({ x: px, y: py, vx: vx + (Math.random() - .5) * 90, vy: vy + (Math.random() - .5) * 90, l: 0, m: life * (.6 + Math.random() * .6), s: Math.random() < .3 ? 2.4 : 1.4 }); }
-    function pill(hw, hh, ox = cx, oy = cy) { x.beginPath(); x.roundRect(ox - hw, oy - hh, hw * 2, hh * 2, hw); }
+    const line = (pts, col, w) => { x.strokeStyle = col; x.lineWidth = w; x.lineCap = 'round'; x.lineJoin = 'round'; x.beginPath(); pts.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.stroke(); };
+    const disc = (px, py, r, col) => { x.fillStyle = col; x.beginPath(); x.arc(px, py, r, 0, TAU); x.fill(); };
+    const rr = (px, py, w, hh, r, col) => { x.fillStyle = col; x.beginPath(); x.roundRect(px, py, w, hh, r); x.fill(); };
+    const appear = (t, s) => oc(seg(t, s, s + 420));
+    function lift(t, s, fn) { const a = appear(t, s); if (a <= 0) return; x.save(); x.globalAlpha *= a; x.translate(0, (1 - a) * .05 * h); fn(); x.restore(); }
 
-    function frame(now) { let t = now - t0 + tOff; if (skip && t < T.dive) { tOff += T.dive - t; t = T.dive; P.length = 0; }
-      const dt = Math.min(50, last ? now - last : 16); last = now;
-      x.setTransform(dpr, 0, 0, dpr, 0, 0); x.globalAlpha = 1; x.shadowBlur = 0; x.clearRect(0, 0, W, H);
-      const dk = seg(t, T.dive, T.end), mk = io(seg(t, T.m0, T.m1)), gs = io(seg(t, T.g0, T.g1)), sp = io(seg(t, T.s0, T.s1)), grey = seg(t, T.shut0, T.shut0 + 400);
-      const S = dk > 0 ? Math.exp(Math.pow(dk, 1.7) * Math.log(Smax)) : 1;
+    // ---------------- the person, side on (walking right)
+    function side(px, env, p) {
+      const leg = k => { const q = p + k * Math.PI, th = AMP * env * Math.sin(q), kb = .08 + .65 * env * Math.pow(Math.max(0, Math.cos(q)), 1.5), sa = th - kb;
+        const kx = .235 * h * Math.sin(th), ky = .235 * h * Math.cos(th); return { kx, ky, ax: kx + .235 * h * Math.sin(sa), ay: ky + .235 * h * Math.cos(sa) }; };
+      const L0 = leg(0), L1 = leg(1), hipY = FY - .03 * h - Math.max(L0.ay, L1.ay), hx = px;
+      const lean = .07, shX = hx + .29 * h * Math.sin(lean), shY = hipY - .29 * h * Math.cos(lean);
+      const arm = k => { const ua = (k ? 1 : -1) * .42 * env * Math.sin(p), ex = shX + .16 * h * Math.sin(ua), ey = shY + .03 * h + .16 * h * Math.cos(ua), fa = ua + .45;
+        return [[shX, shY + .03 * h], [ex, ey], [ex + .15 * h * Math.sin(fa), ey + .15 * h * Math.cos(fa)]]; };
+      const drawLeg = (Lg, col) => { const A = [hx + Lg.kx, hipY + Lg.ky], B = [hx + Lg.ax, hipY + Lg.ay]; line([[hx, hipY], A, B], col, .075 * h); line([[B[0] - .012 * h, B[1] + .012 * h], [B[0] + .065 * h, B[1] + .012 * h]], col, .055 * h); };
+      const a1 = arm(1); line(a1, G2, .065 * h); disc(a1[2][0], a1[2][1], .032 * h, INK2);
+      drawLeg(L1, INK2); drawLeg(L0, INK);
+      line([[hx, hipY - .05 * h], [shX, shY + .05 * h]], G, .2 * h);
+      disc(shX - .06 * h, shY - .05 * h, .07 * h, HOOD);
+      disc(shX + .025 * h, shY - .155 * h, .09 * h, INK);
+      const a0 = arm(0); line(a0, '#fff', .085 * h); line(a0, G, .065 * h); disc(a0[2][0], a0[2][1], .032 * h, INK);
+    }
+    // ---------------- the person, from behind (standing, sitting, typing, fist up)
+    let pumpArm = null;
+    function backView(px, hipY, sit, t, pump) {
+      // legs: to the floor while standing; only the shins under the seat once sitting
+      for (const s of [-1, 1]) { const top = [px + s * .055 * h * (1 + .35 * sit), lerp(hipY + .02 * h, seatY + .06 * h, sit)], foot = [px + s * .075 * h, FY - .025 * h];
+        line([top, foot], INK, lerp(.075, .062, sit) * h); line([[foot[0] - .02 * h, foot[1] + .008 * h], [foot[0] + .02 * h, foot[1] + .008 * h]], INK, .06 * h); }
+      // arms reach in front of the torso (towards the desk), so they go first: only the elbows show while typing
+      for (const s of [-1, 1]) { const ki = Math.floor((t - T.type0) / T.key), typing = t > T.type0 && t < T.enter + 60, tap = typing && (ki % 2 === (s > 0 ? 0 : 1)) ? Math.sin(Math.PI * seg((t - T.type0) % T.key, 0, T.key * .8)) : 0;
+        const jit = sit * .006 * h * Math.sin(t / 47 + s * 2) - tap * .018 * h;
+        const sh = [px + s * .125 * h, hipY - .255 * h];
+        let el = [lerp(px + s * .15 * h, px + s * .215 * h, sit), lerp(hipY - .1 * h, hipY - .12 * h + jit, sit)], wr = [lerp(px + s * .155 * h, px + s * .13 * h, sit), lerp(hipY + .03 * h, hipY - .17 * h + jit * 1.4, sit)];
+        if (s > 0 && pump > 0) { el = [lerp(el[0], px + .23 * h, pump), lerp(el[1], hipY - .34 * h, pump)]; wr = [lerp(wr[0], px + .21 * h, pump), lerp(wr[1], hipY - .53 * h, pump)]; }
+        if (s > 0 && pump > .2) pumpArm = [sh, el, wr]; else { line([sh, el, wr], s < 0 ? G2 : G, .065 * h); disc(wr[0], wr[1], .034 * h, INK); } }
+      rr(px - .14 * h, hipY - .3 * h, .28 * h, .34 * h, .09 * h, G);
+      x.fillStyle = HOOD; x.beginPath(); x.ellipse(px, hipY - .27 * h, .095 * h, .045 * h, 0, 0, TAU); x.fill();
+      const nod = t > T.ok && t < T.ok + 500 ? Math.sin(Math.PI * seg(t, T.ok, T.ok + 500)) * .012 * h : 0;
+      disc(px, hipY - .4 * h + nod, .09 * h, INK);
+      if (pumpArm) { line(pumpArm, G, .065 * h); disc(pumpArm[2][0], pumpArm[2][1], .04 * h, INK); pumpArm = null; }
+    }
+    function chair(t) { const b = Math.sin(Math.PI * seg(t, T.sit0 + 220, T.sit0 + 520)) * .014 * h, cbx = chairX;
+      x.fillStyle = '#eff2f0'; x.beginPath(); x.ellipse(cbx, FY + .004 * h, .25 * h, .02 * h, 0, 0, TAU); x.fill();
+      rr(cbx - .016 * h, seatY + .02 * h, .032 * h, FY - .06 * h - seatY - .02 * h, .01 * h, '#3b413e');
+      rr(cbx - .17 * h, FY - .062 * h, .34 * h, .022 * h, .011 * h, '#2c312e');
+      for (const k of [-1, 0, 1]) disc(cbx + k * .16 * h, FY - .022 * h, .022 * h, INK);
+      rr(cbx - .18 * h, seatY - .03 * h + b, .36 * h, .05 * h, .025 * h, '#2c312e');
+      rr(cbx - .165 * h, seatY - .245 * h + b, .33 * h, .21 * h, .055 * h, '#1f2321');
+      rr(cbx - .14 * h, seatY - .225 * h + b, .28 * h, .17 * h, .04 * h, '#2c312e'); }
 
-      // ---- the dark, with the zero's hole cut out once we dive
-      x.fillStyle = BG;
-      if (dk > 0) { x.beginPath(); x.rect(0, 0, W, H); x.roundRect(cx - ihw * S, cy - ihh * S, ihw * S * 2, ihh * S * 2, ihw * S); x.fill('evenodd');
-        const hole = 1 - oc(seg(dk, 0, .35)); if (hole > 0) { x.globalAlpha = hole; x.beginPath(); x.roundRect(cx - ihw * S, cy - ihh * S, ihw * S * 2, ihh * S * 2, ihw * S); x.fill(); x.globalAlpha = 1; } }
-      else { x.fillRect(0, 0, W, H);
-        // a green warmth that grows with the sweep and settles on the logo
-        const glow = .16 * gs * (1 - .4 * mk) * (1 - seg(t, T.shine1 - 100, T.dive)); if (glow > 0) { const g = x.createRadialGradient(cx, cy, 0, cx, cy, M * .8); g.addColorStop(0, `rgba(31,210,111,${glow})`); g.addColorStop(1, 'rgba(31,210,111,0)'); x.fillStyle = g; x.fillRect(0, 0, W, H); }
-        const v = x.createRadialGradient(cx, cy, M * .35, cx, cy, Math.hypot(W, H) * .62); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.55)'); x.fillStyle = v; x.fillRect(0, 0, W, H); }
+    // ---------------- the monitor's screen: off, waking, login, then the real terminal behind it
+    function screen(t) { const { x: X, y: Y, w, h: sh } = S, u = Math.min(w, sh), r = .01 * h, rev = seg(t, T.rev0, T.rev1);
+      if (rev > 0) { x.save(); x.globalCompositeOperation = 'destination-out'; x.globalAlpha = 1; x.beginPath(); x.roundRect(X, Y, w, sh, r); x.fill(); x.restore(); }
+      if (rev >= 1) return; x.save(); x.beginPath(); x.roundRect(X, Y, w, sh, r); x.clip(); x.globalAlpha *= 1 - rev;
+      x.fillStyle = '#121514'; x.fillRect(X, Y, w, sh);
+      const on = seg(t, T.wake0, T.wake1); if (on > 0) { const k1 = oq(clamp(on / .4)), k2 = io(clamp((on - .3) / .7)), lw = w * k1, lh = Math.max(1.5, sh * k2); x.fillStyle = '#fff'; x.fillRect(X + (w - lw) / 2, Y + (sh - lh) / 2, lw, lh); }
+      if (t > T.wake1 - 140) { const ok = t >= T.ok, ccx = X + w / 2;
+        // the zero, popping in
+        const pop = ob(seg(t, T.wake1 - 140, T.wake1 + 240)), L = u * .13 * pop, ly = Y + sh * .38;
+        if (L > 0) { x.strokeStyle = G; x.lineWidth = L * 9 / 27; x.beginPath(); x.roundRect(ccx - L * 19 / 27, ly - L, L * 38 / 27, L * 2, L * 19 / 27); x.stroke();
+          x.lineWidth = L * 8 / 27; x.lineCap = 'round'; x.beginPath(); x.moveTo(ccx - L * 8.5 / 27, ly + L * 12.5 / 27); x.lineTo(ccx + L * 8.5 / 27, ly - L * 12.5 / 27); x.stroke(); }
+        // the password field
+        const fa = oc(seg(t, T.wake1, T.wake1 + 300)); if (fa > 0) { x.save(); x.globalAlpha *= fa; const fw = Math.min(w * .62, u * 1.05), fh = u * .12, fx = X + (w - fw) / 2, fy = Y + sh * .66 - fh / 2;
+          x.fillStyle = ok ? '#eef9f2' : '#fff'; x.strokeStyle = ok ? G : '#d3d9d6'; x.lineWidth = Math.max(1, u * .008); x.beginPath(); x.roundRect(fx, fy, fw, fh, fh / 2); x.fill(); x.stroke();
+          let n = 0; for (let i = 0; i < 6; i++) { const k = oc(seg(t, keyAt(i), keyAt(i) + 90)); if (k <= 0) break; n = i + 1; disc(fx + fh * .55 + i * fh * .5, fy + fh / 2, fh * .12 * k, ok ? G : INK); }
+          if (!ok && Math.floor(t / 380) % 2 === 0) { x.fillStyle = G; x.fillRect(fx + fh * .55 + n * fh * .5 - fh * .18, fy + fh * .26, Math.max(1, fh * .06), fh * .48); }
+          if (ok) { const c = ob(seg(t, T.ok, T.ok + 280)), ck = seg(t, T.ok + 80, T.ok + 320), qx = fx + fw - fh * .55, qy = fy + fh / 2; disc(qx, qy, fh * .32 * c, G);
+            if (ck > 0) { const p1 = [qx - fh * .14, qy], p2 = [qx - fh * .04, qy + fh * .1], p3 = [qx + fh * .15, qy - fh * .11], k = ck * 2;
+              line(k < 1 ? [p1, [lerp(p1[0], p2[0], k), lerp(p1[1], p2[1], k)]] : [p1, p2, [lerp(p2[0], p3[0], k - 1), lerp(p2[1], p3[1], k - 1)]], '#fff', Math.max(1.2, fh * .07)); } }
+          x.restore(); }
+        // loading the terminal
+        const ld = io(seg(t, T.ok + 150, T.rev0 + 80)); if (ld > 0) { x.fillStyle = G; x.fillRect(X, Y + sh - Math.max(2, u * .014), w * ld, Math.max(2, u * .014)); } }
+      x.restore(); }
 
-      // ---- the instrument: crosshairs, a slow outer dashed ring, viewfinder corners
-      const inst = (1 - mk) * seg(t, 150, 900);
-      if (inst > 0 && dk === 0) { const e = oc(seg(t, 200, 1100)); x.globalAlpha = inst * .9; x.fillStyle = '#131715';
-        x.fillRect(cx - W / 2 * e, cy - .5, W * e, 1); x.fillRect(cx - .5, cy - H / 2 * e, 1, H * e);
-        x.strokeStyle = '#161b18'; x.lineWidth = 1; x.beginPath(); x.arc(cx, cy, RO * 1.22, 0, TAU); x.stroke();
-        x.save(); x.translate(cx, cy); x.rotate(t / 9000); x.setLineDash([2, 10]); x.strokeStyle = '#1f2522'; x.beginPath(); x.arc(0, 0, RO * 1.38, 0, TAU); x.stroke(); x.restore(); x.setLineDash([]); }
-      const cor = seg(t, 100, 700) * (1 - seg(t, T.dive, T.dive + 250)); if (cor > 0) { const k = oc(seg(t, 100, 700)), m = lerp(46, 22, k), L = 18; x.globalAlpha = cor * .8; x.fillStyle = '#3a423e';
-        for (const [sx, sy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) { const px = sx > 0 ? m : W - m, py = sy > 0 ? m : H - m; x.fillRect(px, py, L * sx, 1.5 * sy); x.fillRect(px, py, 1.5 * sx, L * sy); } }
+    function frame(now) { let t = now - t0 + tOff; if (skip && t < T.push0) { tOff += T.push0 - t; t = T.push0; }
+      const e = io(seg(t, T.push0, T.push1)), z = e > 0 ? zp * Math.exp(e * Math.log(Zf / zp)) : lerp(1, zp, oc(seg(t, 0, T.push0))), f = e > 0 ? (z - zp) / (Zf - zp) : 0;
+      const P = { x: lerp(Sc.x, W / 2, f), y: lerp(Sc.y, H / 2, f) }, zc = e > 0 ? z * Math.pow(z / zp, .5) : z;
+      const world = (zz, dy = 0) => x.setTransform(dpr * zz, 0, 0, dpr * zz, dpr * (P.x - Sc.x * zz), dpr * (P.y - Sc.y * zz + dy));
+      x.setTransform(dpr, 0, 0, dpr, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, W, H); x.fillStyle = '#fff'; x.fillRect(0, 0, W, H);
+      world(z);
+      // floor, drawn out from the middle
+      const fl = oc(seg(t, 0, 600)); x.fillStyle = LINE; x.fillRect(cx - W * fl, FY, W * 2 * fl, Math.max(1, 1.5 / z));
+      // a wall clock that never stops
+      lift(t, 280, () => { const kx = cx + DW * .36, ky = FY - 1.25 * h, r = .075 * h; x.fillStyle = '#fff'; x.strokeStyle = INK; x.lineWidth = .01 * h; x.beginPath(); x.arc(kx, ky, r, 0, TAU); x.fill(); x.stroke();
+        for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; line([[kx + Math.cos(a) * r * .72, ky + Math.sin(a) * r * .72], [kx + Math.cos(a) * r * .82, ky + Math.sin(a) * r * .82]], INK2, .007 * h); }
+        const am = t / 1600 * TAU - Math.PI / 2, ah = t / 19200 * TAU + .9; line([[kx, ky], [kx + Math.cos(am) * r * .62, ky + Math.sin(am) * r * .62]], INK, .009 * h); line([[kx, ky], [kx + Math.cos(ah) * r * .42, ky + Math.sin(ah) * r * .42]], INK, .012 * h); disc(kx, ky, .012 * h, G); });
+      // the desk
+      lift(t, 80, () => { rr(cx - DW / 2 + .03 * h, deskY + .03 * h, .03 * h, FY - deskY - .03 * h, .006 * h, '#d3d9d6'); rr(cx + DW / 2 - .06 * h, deskY + .03 * h, .03 * h, FY - deskY - .03 * h, .006 * h, '#d3d9d6');
+        rr(cx - DW / 2, deskY, DW, .035 * h, .008 * h, '#e4e8e6'); });
+      // the monitor
+      lift(t, 170, () => { rr(cx - .11 * h, deskY - .016 * h, .22 * h, .018 * h, .008 * h, '#2c312e'); rr(cx - .018 * h, scrB + chin, .036 * h, deskY - scrB - chin, .006 * h, '#3b413e');
+        rr(S.x - bez, S.y - bez, Sw + bez * 2, Sh + bez + chin, .01 * h + bez, '#151816'); disc(cx, scrB + chin * .55, .005 * h, t > T.wake0 ? G : '#3b413e'); screen(t); });
+      // a plant, a mug, a keyboard
+      lift(t, 340, () => { const px = cx - DW / 2 + .13 * h; x.fillStyle = '#e2e6e4'; x.beginPath(); x.moveTo(px - .05 * h, deskY - .09 * h); x.lineTo(px + .05 * h, deskY - .09 * h); x.lineTo(px + .038 * h, deskY); x.lineTo(px - .038 * h, deskY); x.fill();
+        const sw = Math.sin(t / 700) * .04; for (const [a, l, c] of [[-.55, .11, G], [.05, .14, '#16b85c'], [.6, .1, G2]]) { x.save(); x.translate(px, deskY - .09 * h); x.rotate(a + sw); x.fillStyle = c; x.beginPath(); x.ellipse(0, -l * h / 2, .028 * h, l * h / 2, 0, 0, TAU); x.fill(); x.restore(); }
+        const mx = cx + DW / 2 - .17 * h; x.strokeStyle = INK; x.lineWidth = .008 * h; x.fillStyle = '#fff'; x.beginPath(); x.roundRect(mx, deskY - .085 * h, .07 * h, .085 * h, .012 * h); x.fill(); x.stroke();
+        x.beginPath(); x.arc(mx + .07 * h, deskY - .045 * h, .02 * h, -Math.PI / 2, Math.PI / 2); x.stroke();
+        x.strokeStyle = G; x.lineWidth = .006 * h; x.beginPath(); x.roundRect(mx + .026 * h, deskY - .06 * h, .018 * h, .03 * h, .009 * h); x.stroke();
+        const ga = x.globalAlpha; for (const k of [0, 1]) { const ph = (t / 1400 + k * .5) % 1; x.globalAlpha = ga * Math.sin(Math.PI * ph) * .7; x.strokeStyle = '#c4ccc8'; x.lineWidth = .006 * h; x.beginPath();
+          const sx = mx + .022 * h + k * .026 * h, sy = deskY - .1 * h - ph * .07 * h; x.moveTo(sx, sy); x.bezierCurveTo(sx + .015 * h, sy - .02 * h, sx - .015 * h, sy - .035 * h, sx, sy - .05 * h); x.stroke(); }
+        x.globalAlpha = ga; rr(chairX - .17 * h, deskY - .016 * h, .34 * h, .016 * h, .005 * h, '#2c312e'); rr(chairX + .21 * h, deskY - .016 * h, .04 * h, .016 * h, .008 * h, '#2c312e'); });
+
+      // ---- the person and the chair are nearer the camera, so they rush past faster when we dive
+      world(zc, H * 1.3 * e); const fadeP = e < .75 ? 1 : 0;
+      if (t > T.walk0 && fadeP > 0) {
+        const wu = walkEase(seg(t, T.walk0, T.walk1)), steps = wu * nSteps, px = x0 + dist * wu, env = Math.min(1, steps * 1.4, (nSteps - steps) * 1.4), p = Math.PI * steps;
+        x.fillStyle = '#eff2f0'; x.beginPath(); x.ellipse(px, FY + .004 * h, .13 * h, .016 * h, 0, 0, TAU); x.fill();
+        const tk = seg(t, T.turn, T.turn + 220);
+        if (tk < .5) { x.save(); x.translate(px, 0); x.scale(1 - tk * 2, 1); x.translate(-px, 0); side(px, env, p); x.restore(); }
+        else { const sit = ob(seg(t, T.sit0, T.sit1)), hipY = lerp(FY - .465 * h, seatY, Math.min(sit, 1.05)), pump = t > T.ok + 100 ? ob(seg(t, T.ok + 100, T.ok + 360)) * (1 - io(seg(t, T.ok + 760, T.ok + 1000))) : 0;
+          x.save(); x.translate(px, 0); x.scale((tk - .5) * 2, 1); x.translate(-px, 0); backView(px, hipY, clamp(sit), t, Math.max(0, pump)); x.restore(); } }
+      if (fadeP > 0) lift(t, 230, () => chair(t));
       x.globalAlpha = 1;
 
-      // ---- the dial, until it closes into the zero
-      const thump = 1 - .022 * Math.sin(Math.PI * seg(t, T.s1, T.s1 + 240)), sc = lerp(lerp(.94, 1.03, seg(t, 0, T.m0)) * thump, 1, mk);
-      const curH = lerp(9.5, 16, sp);
-      if (t < T.m1 && dk === 0) { x.save(); x.translate(cx, cy); x.scale(sc, sc);
-        const fade = 1 - mk;
-        // base ring drawing itself from midnight
-        const pr = oc(seg(t, T.ring0, T.ring1)); if (pr > 0 && t < T.m0) { x.strokeStyle = OFF; x.lineWidth = 1.2; x.beginPath(); x.arc(0, 0, R, -Math.PI / 2, -Math.PI / 2 + pr * TAU); x.stroke(); }
-        // 96 quarter-hour ticks inside the ring
-        for (let j = 0; j < 96; j++) { const h = j / 4, a = ang(h), app = oc(seg(t, T.tk0 + j * 6, T.tk0 + j * 6 + 220)); if (app <= 0) continue;
-          const len = j % 24 === 0 ? 15 : j % 4 === 0 ? 9 : 4, rr = lerp(R - 7, R, mk);
-          let col = OFF; const inS = h >= 9.5 && h <= 16 && h <= curH + .01 && t >= T.s0; if (inS) col = mix(WH, GREY, grey);
-          if (j % 24 === 0 && !inS) col = '#3b433f';
-          const rel = ((h - 16 + 24) % 24) / 24 * 96, gk = clamp((gs * 96 - rel) / 3); if (t >= T.g0 && gk > 0) col = mix(col, G, gk);
-          const rIn = lerp(rr - len, R, mk), rOut = rr; x.globalAlpha = app * fade; x.strokeStyle = col; x.lineWidth = j % 4 === 0 ? 1.6 : 1;
-          x.beginPath(); x.moveTo(Math.cos(a) * rIn, Math.sin(a) * rIn); x.lineTo(Math.cos(a) * rOut, Math.sin(a) * rOut); x.stroke(); }
-        // the week: 168 hour ticks around the outside; wall street's 35 light, then all of them go green
-        for (let i = 0; i < 168; i++) { const a = -Math.PI / 2 + (i + .5) / 168 * TAU, app = oc(seg(t, T.wk0 + i * 3.2, T.wk0 + i * 3.2 + 240)); if (app <= 0) continue;
-          const day = i % 24 === 0, len = day ? 14 : 7; let col = day ? '#353c38' : '#1c211e';
-          const r = nyRank.get(i); if (r !== undefined && t >= T.s0 && sp * 35 > r) col = mix(WH, GREY, grey);
-          const gk = clamp((gs * 168 - i) / 8); if (gk > 0) col = mix(col, G, gk);
-          const k = clamp((mk - (i % 24) / 24 * .3) / .7), rr = lerp(RO, R, io(k)); x.globalAlpha = app * (1 - k); x.strokeStyle = col; x.lineWidth = day ? 1.6 : 2;
-          x.beginPath(); x.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); x.lineTo(Math.cos(a) * (rr + len * (1 - k)), Math.sin(a) * (rr + len * (1 - k))); x.stroke(); }
-        x.globalAlpha = fade;
-        // wall street's day: a white arc, 9:30 to 4:00, greying when the shutter comes down
-        if (t >= T.s0) { x.strokeStyle = mix(WH, GREY, grey); x.lineWidth = 3; x.lineCap = 'round'; if (!grey) { x.shadowColor = 'rgba(238,242,239,.5)'; x.shadowBlur = 10; }
-          x.beginPath(); x.arc(0, 0, R, ang(9.5), ang(curH)); x.stroke(); x.shadowBlur = 0; }
-        // the bell: a ring of sound from the hand at 4:00
-        const bell = seg(t, T.s1, T.s1 + 750); if (bell > 0 && bell < 1) { x.globalAlpha = (1 - bell) * .55; x.strokeStyle = WH; x.lineWidth = 1.5; x.beginPath(); x.arc(0, 0, R * (1 + oc(bell) * 1.3), 0, TAU); x.stroke();
-          x.beginPath(); x.arc(Math.cos(ang(16)) * R, Math.sin(ang(16)) * R, 4 + oc(bell) * 40, 0, TAU); x.stroke(); x.globalAlpha = fade; }
-        // st0x's day: green, from 4:00 all the way round
-        if (t >= T.g0 && t < T.m0) { x.strokeStyle = G; x.lineWidth = 3.5; x.lineCap = 'round'; x.shadowColor = 'rgba(31,210,111,.8)'; x.shadowBlur = 16; x.beginPath(); x.arc(0, 0, R, ang(16), ang(16) + gs * TAU); x.stroke(); x.shadowBlur = 0; }
-        x.restore(); }
+      // ---- thrown in: speed lines around the screen while we fly
+      x.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const sp = Math.sin(Math.PI * clamp((e - .1) / .8)); if (sp > 0) { const sw = Sw * z, sh = Sh * z; x.save(); x.beginPath(); x.rect(0, 0, W, H); x.roundRect(P.x - sw / 2, P.y - sh / 2, sw, sh, .01 * h * z); x.clip('evenodd');
+        x.strokeStyle = '#cfd6d3'; x.lineCap = 'round'; const D = Math.hypot(W, H) / 2; for (let i = 0; i < 40; i++) { const a = i / 40 * TAU + ((i * 73) % 7) * .03, r0 = D * (.42 + ((i * 37) % 10) / 40) * (1 - .25 * e), l = D * (.1 + ((i * 53) % 9) / 50);
+          x.globalAlpha = sp * .7; x.lineWidth = 1 + (i % 3); x.beginPath(); x.moveTo(W / 2 + Math.cos(a) * r0, H / 2 + Math.sin(a) * r0); x.lineTo(W / 2 + Math.cos(a) * (r0 + l), H / 2 + Math.sin(a) * (r0 + l)); x.stroke(); } x.restore(); x.globalAlpha = 1; }
 
-      // ---- the ring closing into the zero (morph), then the logo, then the dive through it
-      if (t >= T.m0) { const s = S, hw = lerp(R * sc, hwL, mk) * s, hh = lerp(R * sc, RL, mk) * s, lw = lerp(3.5, lwL, mk) * s;
-        x.globalAlpha = 1 - seg(dk, .12, .7); x.strokeStyle = G; x.lineWidth = lw; x.shadowColor = 'rgba(31,210,111,.7)'; x.shadowBlur = dk > 0 ? 0 : lerp(16, 34, mk) * (1 + .25 * Math.sin(t / 160) * seg(t, T.m1, T.m1 + 200));
-        pill(hw, hh); x.stroke(); x.shadowBlur = 0; }
-
-      // ---- the hand: grows from the hub, sweeps the session, stops at 4, goes on in green, becomes the slash
-      const handIn = oc(seg(t, T.hand0, T.s0)), slashOut = 1 - seg(dk, 0, .22);
-      if (handIn > 0 && slashOut > 0) { const s = S, a = t < T.s0 ? ang(9.5) : t < T.g0 ? ang(curH) : t < T.m0 ? ang(16) + gs * TAU : lerp(ang(16) + TAU, slashA + TAU, mk);
-        const front = lerp(R * .86 * handIn * sc, slL, mk) * s, back = lerp(0, slL, mk) * s, w = lerp(2.4, swL, mk) * s * lerp(1, .6, seg(dk, 0, .22));
-        const col = t < T.g0 ? mix(WH, GREY, grey * (1 - seg(t, T.seam0, T.split0))) : G;
-        x.globalAlpha = slashOut; x.strokeStyle = col; x.lineCap = 'round'; x.lineWidth = w; if (t >= T.g0) { x.shadowColor = 'rgba(31,210,111,.8)'; x.shadowBlur = dk > 0 ? 0 : 18; }
-        x.beginPath(); x.moveTo(cx - Math.cos(a) * back, cy - Math.sin(a) * back); x.lineTo(cx + Math.cos(a) * front, cy + Math.sin(a) * front); x.stroke(); x.shadowBlur = 0;
-        // the hub, and the hot tip while the hand runs green
-        if (mk < 1) { x.globalAlpha = (1 - mk) * slashOut; x.fillStyle = t >= T.g0 ? G : col; x.beginPath(); x.arc(cx, cy, 4 * sc, 0, TAU); x.fill();
-          if (t >= T.g0 && t < T.m0) { const tx = cx + Math.cos(a) * R * sc, ty = cy + Math.sin(a) * R * sc; x.fillStyle = '#eafff2'; x.shadowColor = G; x.shadowBlur = 20; x.beginPath(); x.arc(tx, ty, 3.4, 0, TAU); x.fill(); x.shadowBlur = 0;
-            if (!skip) { const sp2 = 260 + 900 * Math.sin(Math.PI * gs); emit(tx, ty, -Math.sin(a) * sp2 * .35, Math.cos(a) * sp2 * .35, Math.round(dt / 16 * 3), 700); } } } }
-      // the opening dot before the dial exists
-      if (t < T.ring0 + 300) { const k = 1 - seg(t, T.ring0, T.ring0 + 300); x.globalAlpha = k * (.6 + .4 * Math.sin(t / 60)); x.fillStyle = G; x.shadowColor = G; x.shadowBlur = 18; x.beginPath(); x.arc(cx, cy, 4, 0, TAU); x.fill(); x.shadowBlur = 0; }
-
-      // ---- the logo locks: a shockwave, a burst, and a light passing across it
-      if (t >= T.m1 && dk === 0) {
-        if (!burst && !skip) { burst = true; for (let i = 0; i < 70; i++) { const a = Math.random() * TAU, v = 160 + Math.random() * 420; emit(cx + Math.cos(a) * hwL, cy + Math.sin(a) * RL, Math.cos(a) * v, Math.sin(a) * v, 1, 900); } }
-        const sw = seg(t, T.m1, T.m1 + 650); if (sw < 1) { x.globalAlpha = (1 - sw) * .6; x.strokeStyle = G; x.lineWidth = 1.5; const k = 1 + oc(sw) * 1.6; pill(hwL * k + lwL, RL * k + lwL); x.stroke(); }
-        const sh = io(seg(t, T.shine0, T.shine1)); if (sh > 0 && sh < 1) { const g = x.createLinearGradient(cx - RL * 1.4, cy + RL * 1.4, cx + RL * 1.4, cy - RL * 1.4), p = lerp(-.25, 1.25, sh);
-          g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(clamp(p - .16), 'rgba(255,255,255,0)'); g.addColorStop(clamp(p), 'rgba(255,255,255,.75)'); g.addColorStop(clamp(p + .16), 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(255,255,255,0)');
-          x.globalAlpha = 1; x.strokeStyle = g; x.lineWidth = lwL; pill(hwL, RL); x.stroke(); x.lineWidth = swL; x.lineCap = 'round'; x.beginPath(); x.moveTo(cx - Math.cos(slashA) * slL, cy - Math.sin(slashA) * slL); x.lineTo(cx + Math.cos(slashA) * slL, cy + Math.sin(slashA) * slL); x.stroke(); } }
-
-      // ---- the shutter: rolls down at the bell, then a green seam splits it open
-      if (t >= T.shut0 && t < T.split0 + 1100 && dk === 0) { const dn = ob(seg(t, T.shut0, T.shut1)), off = (1 - dn) * -H;
-        for (let s = 0; s < NS; s++) { const y = s * slH + off; if (y + slH < 0) continue; const d = Math.abs(s - (NS - 1) / 2) / NS * 260, k = ic(seg(t, T.split0 + d, T.split0 + d + 560)); if (k >= 1) continue;
-          const dx = k * cx * 1.2, a = 1 - seg(k, .7, 1); x.globalAlpha = a; x.save(); x.translate(0, y + k * k * 30);
-          x.fillStyle = slat; x.fillRect(-dx, 0, cx, slH); x.fillRect(cx + dx, 0, W - cx, slH);
-          x.fillStyle = '#202623'; x.fillRect(-dx, 0, cx, 1); x.fillRect(cx + dx, 0, W - cx, 1); x.fillStyle = '#030403'; x.fillRect(-dx, slH - 1, cx, 1); x.fillRect(cx + dx, slH - 1, W - cx, 1); x.restore(); }
-        // the bottom bar of the shutter, heavier
-        if (t < T.split0) { x.globalAlpha = 1; x.fillStyle = '#1a1f1c'; x.fillRect(0, H - 3 + off, W, 3); }
-        const seam = oq(seg(t, T.seam0, T.seam0 + 200)) * (1 - seg(t, T.split0 + 200, T.split0 + 700)); if (seam > 0) { x.globalAlpha = seam; x.fillStyle = G; x.shadowColor = G; x.shadowBlur = 24; const hgt = H * seam; x.fillRect(cx - 1, cy - hgt / 2, 2, hgt); x.shadowBlur = 0; } }
-
-      // ---- sparks
-      x.globalAlpha = 1; x.fillStyle = G;
-      for (let i = P.length - 1; i >= 0; i--) { const p = P[i]; p.l += dt; if (p.l >= p.m) { P.splice(i, 1); continue; } const f = dt / 1000; p.x += p.vx * f; p.y += p.vy * f; p.vx *= .97; p.vy *= .97;
-        if (dk === 0) { x.globalAlpha = (1 - p.l / p.m) * .9; x.fillRect(p.x, p.y, p.s, p.s); } }
-
-      // ---- film grain over everything
-      const gr = .055 * (1 - dk); if (gr > 0) { x.globalAlpha = gr; x.save(); x.translate(Math.random() * 180, Math.random() * 180); x.fillStyle = grain; x.fillRect(-180, -180, W + 360, H + 360); x.restore(); }
-      x.globalAlpha = 1;
-
-      // ---- the terminal behind the zero moves up to meet you
-      if (dk > 0) app.style.transform = `scale(${lerp(.86, 1, oc(dk)).toFixed(4)})`;
+      // ---- the real terminal sits exactly in the monitor's screen and grows with it
+      app.style.transform = `translate(${(P.x - Sw / 2 * z).toFixed(2)}px,${(P.y - Sh / 2 * z).toFixed(2)}px) scale(${(Sw * z / W).toFixed(5)})`;
       if (t >= T.end) { if (!done) { done = true; app.style.transform = ''; app.style.transformOrigin = ''; onDone && onDone(); } return; }
       raf = requestAnimationFrame(frame); }
 
-    frame(performance.now()); if (ov) ov.style.background = 'transparent';
+    frame(performance.now());
     return { skip() { skip = true; }, length: T.end, finish() { cancelAnimationFrame(raf); app.style.transform = ''; app.style.transformOrigin = ''; if (!done) { done = true; onDone && onDone(); } } };
   }
   window.Intro = { play };
