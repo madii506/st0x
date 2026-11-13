@@ -65,6 +65,16 @@ async function candles(mint, tf) { if (!B58.test(mint)) throw new Error('bad min
     const rows = ((g.data && g.data.attributes && g.data.attributes.ohlcv_list) || []).map(x => ({ t: x[0], o: +x[1], h: +x[2], l: +x[3], c: +x[4], v: +x[5] })).filter(r => r.c > 0).sort((a, b) => a.t - b.t);
     return { mint, tf: TF[tf] ? tf : '1h', pool: pool.addr, dex: pool.dex, quote: pool.quote, rows }; }); }
 
+
+// ---------------------------------------------------------------- recent on-chain trades in the most liquid pool (GeckoTerminal)
+async function trades(mint) { if (!B58.test(mint)) throw new Error('bad mint');
+  return memo('tr:' + mint, 20000, async () => { const pool = await poolOf(mint);
+    const g = await getJ(`https://api.geckoterminal.com/api/v2/networks/solana/pools/${pool.addr}/trades`, 9000);
+    const rows = (g.data || []).slice(0, 60).map(x => { const t = x.attributes || {}, buy = t.kind === 'buy', stockIsTo = t.to_token_address === mint, amt = stockIsTo ? +t.to_token_amount : +t.from_token_amount;
+      const px = stockIsTo ? +t.price_to_in_usd : +t.price_from_in_usd; return { t: Date.parse(t.block_timestamp), side: stockIsTo ? 'buy' : 'sell', usd: +t.volume_in_usd || null, amount: amt || null, price: px || null, tx: t.tx_hash || null, wallet: t.tx_from_address || null }; })
+      .filter(r => r.t && r.usd);
+    return { mint, pool: pool.addr, dex: pool.dex, rows }; }); }
+
 // ---------------------------------------------------------------- market hours: Pyth publishes the NYSE session schedule, holidays included
 const hours = () => memo('hours', 5 * 60e3, async () => { const L = await getJ('https://hermes.pyth.network/v2/price_feeds?query=SPY&asset_type=equity', 8000);
   const f = (L || []).find(x => x.attributes && x.attributes.symbol === 'Equity.US.SPY/USD') || (L || [])[0]; if (!f) throw new Error('no schedule');
@@ -91,6 +101,7 @@ module.exports = async (req, res) => { const q = new URL(req.url, 'http://x').se
     if (a === 'board') return out(res, 200, await board(), 's-maxage=15, stale-while-revalidate=60');
     if (a === 'candles') return out(res, 200, await candles(String(q.get('mint')), String(q.get('tf') || '1h')), 's-maxage=45, stale-while-revalidate=120');
     if (a === 'hours') return out(res, 200, await hours(), 's-maxage=300, stale-while-revalidate=900');
+    if (a === 'trades') return out(res, 200, await trades(String(q.get('mint'))), 's-maxage=15, stale-while-revalidate=45');
     if (a === 'wallet') return out(res, 200, await wallet(q.get('addr')));
     if (a === 'tx') return out(res, 200, await txStatus(q.get('sig')));
     if (a === 'cfg') return out(res, 200, cfg(), 's-maxage=60');
