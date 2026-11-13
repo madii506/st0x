@@ -3,12 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>st0x · wall street never closes</title>
+<title>ST0X</title>
 <meta name="description" content="st0x is a 24/7 terminal for tokenized stocks on Solana. Live xStocks prices, real charts, the weekend gap, and Jupiter trades you sign in your own wallet.">
 <meta name="theme-color" content="#ffffff">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" href="/favicon.ico?v=596667" sizes="any">
+<link rel="icon" href="/favicon.svg?v=596667" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png?v=596667" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=596667">
 <meta property="og:type" content="website">
 <meta property="og:title" content="st0x · wall street never closes">
 <meta property="og:description" content="Wall Street closes at 4pm. st0x doesn't. Trade tokenized stocks 24/7 on Solana.">
@@ -18,7 +19,7 @@
 <meta name="twitter:description" content="Wall Street closes at 4pm. st0x doesn't.">
 <meta name="twitter:image" content="https://st0x.vercel.app/og.png">
 <link rel="preload" href="/assets/fonts/jbmono.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/st0x.css?v=596263">
+<link rel="stylesheet" href="/assets/st0x.css?v=596667">
 </head>
 <body>
 
@@ -70,6 +71,7 @@
     </div>
     <div class="clocks" id="clocks"></div>
     <p class="wk-hol" id="wkHol"></p>
+    <div class="wk-next" id="wkNext"></div>
   </div>
 </section>
 
@@ -129,6 +131,8 @@
         <div class="ch-depth" id="chDepth"></div>
         <div class="ch-cv"><canvas id="chCv"></canvas><div class="ch-tip" id="chTip"></div><div class="ch-msg" id="chMsg">loading candles…</div></div>
         <div class="ch-legend"><span><i class="b"></i>nyse closed, still trading on-chain</span><span id="chSrc"></span></div>
+        <div class="bt-tabs" id="btTabs"><button data-p="trades" class="on">trades</button><button data-p="info">info</button><button data-p="depth">depth</button><button data-p="movers">movers</button><button data-p="alerts">alerts <i id="alN"></i></button></div>
+        <div class="bt-pane" id="btPane"><div class="empty">loading…</div></div>
       </div>
       <aside class="tk">
         <div class="tk-side" id="tkSide"><button data-side="buy" class="on">buy</button><button data-side="sell">sell</button></div>
@@ -182,6 +186,7 @@
 <section id="gap" class="sec">
   <div class="sec-h"><span class="idx">06</span><h2 class="scr">the gap.</h2></div>
   <p class="lede" id="gapLede">what the chain says vs the last price of the real share.</p>
+  <div class="gap-sum" id="gapSum"></div>
   <div class="gap-tbl" id="gapTbl"><div class="empty">loading…</div></div>
   <p class="fine">on-chain price from jupiter. reference price is the underlying share as reported by xStocks, with the time it was last updated. a positive gap means the token trades above the share.</p>
 </section>
@@ -222,7 +227,7 @@
   </div>
   <div class="built" id="built">
     <span class="bl-h">built on</span>
-    <span class="bl"><svg class="bl-svg" fill="currentColor" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>Solana</title><path d="m23.8764 18.0313-3.962 4.1393a.9201.9201 0 0 1-.306.2106.9407.9407 0 0 1-.367.0742H.4599a.4689.4689 0 0 1-.2522-.0733.4513.4513 0 0 1-.1696-.1962.4375.4375 0 0 1-.0314-.2545.4438.4438 0 0 1 .117-.2298l3.9649-4.1393a.92.92 0 0 1 .3052-.2102.9407.9407 0 0 1 .3658-.0746H23.54a.4692.4692 0 0 1 .2523.0734.4531.4531 0 0 1 .1697.196.438.438 0 0 1 .0313.2547.4442.4442 0 0 1-.1169.2297zm-3.962-8.3355a.9202.9202 0 0 0-.306-.2106.941.941 0 0 0-.367-.0742H.4599a.4687.4687 0 0 0-.2522.0734.4513.4513 0 0 0-.1696.1961.4376.4376 0 0 0-.0314.2546.444.444 0 0 0 .117.2297l3.9649 4.1394a.9204.9204 0 0 0 .3052.2102c.1154.049.24.0744.3658.0746H23.54a.469.469 0 0 0 .2523-.0734.453.453 0 0 0 .1697-.1961.4382.4382 0 0 0 .0313-.2546.4444.4444 0 0 0-.1169-.2297zM.46 6.7225h18.7815a.9411.9411 0 0 0 .367-.0742.9202.9202 0 0 0 .306-.2106l3.962-4.1394a.4442.4442 0 0 0 .117-.2297.4378.4378 0 0 0-.0314-.2546.453.453 0 0 0-.1697-.196.469.469 0 0 0-.2523-.0734H4.7596a.941.941 0 0 0-.3658.0745.9203.9203 0 0 0-.3052.2102L.1246 5.9687a.4438.4438 0 0 0-.1169.2295.4375.4375 0 0 0 .0312.2544.4512.4512 0 0 0 .1692.196.4689.4689 0 0 0 .2518.0739z"/></svg>solana</span>
+    <span class="bl"><svg class="bl-svg" fill="currentColor" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m23.8764 18.0313-3.962 4.1393a.9201.9201 0 0 1-.306.2106.9407.9407 0 0 1-.367.0742H.4599a.4689.4689 0 0 1-.2522-.0733.4513.4513 0 0 1-.1696-.1962.4375.4375 0 0 1-.0314-.2545.4438.4438 0 0 1 .117-.2298l3.9649-4.1393a.92.92 0 0 1 .3052-.2102.9407.9407 0 0 1 .3658-.0746H23.54a.4692.4692 0 0 1 .2523.0734.4531.4531 0 0 1 .1697.196.438.438 0 0 1 .0313.2547.4442.4442 0 0 1-.1169.2297zm-3.962-8.3355a.9202.9202 0 0 0-.306-.2106.941.941 0 0 0-.367-.0742H.4599a.4687.4687 0 0 0-.2522.0734.4513.4513 0 0 0-.1696.1961.4376.4376 0 0 0-.0314.2546.444.444 0 0 0 .117.2297l3.9649 4.1394a.9204.9204 0 0 0 .3052.2102c.1154.049.24.0744.3658.0746H23.54a.469.469 0 0 0 .2523-.0734.453.453 0 0 0 .1697-.1961.4382.4382 0 0 0 .0313-.2546.4444.4444 0 0 0-.1169-.2297zM.46 6.7225h18.7815a.9411.9411 0 0 0 .367-.0742.9202.9202 0 0 0 .306-.2106l3.962-4.1394a.4442.4442 0 0 0 .117-.2297.4378.4378 0 0 0-.0314-.2546.453.453 0 0 0-.1697-.196.469.469 0 0 0-.2523-.0734H4.7596a.941.941 0 0 0-.3658.0745.9203.9203 0 0 0-.3052.2102L.1246 5.9687a.4438.4438 0 0 0-.1169.2295.4375.4375 0 0 0 .0312.2544.4512.4512 0 0 0 .1692.196.4689.4689 0 0 0 .2518.0739z"/></svg>solana</span>
     <span class="bl"><img data-brand="jupiter" alt="">jupiter</span>
     <span class="bl"><img data-brand="pyth" alt="">pyth</span>
     <span class="bl"><b class="bx">x</b>xStocks</span>
@@ -231,10 +236,21 @@
   </div>
 </section>
 
+
+<!-- get started -->
+<section id="start" class="sec">
+  <div class="sec-h"><span class="idx">08</span><h2 class="scr">start in a minute.</h2></div>
+  <div class="steps">
+    <div class="stp"><span class="sn">1</span><b>get a solana wallet</b><p>phantom, solflare or backpack. free, two minutes, you hold the keys.</p><div class="wl-logos"><span>phantom</span><span>solflare</span><span>backpack</span></div></div>
+    <div class="stp"><span class="sn">2</span><b>add SOL or USDC</b><p>buy it in the wallet or send it from an exchange. SOL pays the tiny network fees.</p><div class="wl-logos"><span class="sol">◎ SOL</span><span>$ USDC</span></div></div>
+    <div class="stp"><span class="sn">3</span><b>open the terminal</b><p>connect, type <code>buy nvda 0.1</code>, approve it in your wallet. done, at any hour.</p><a class="btn sm" href="#terminal">[ open terminal ]</a></div>
+  </div>
+</section>
+
 <div class="band alt" aria-hidden="true"><div class="band-run" id="band2"><span>nvda at 3am</span><b>·</b><span>tsla on a sunday</span><b>·</b><span>spy on christmas</span><b>·</b><span>nvda at 3am</span><b>·</b><span>tsla on a sunday</span><b>·</b><span>spy on christmas</span><b>·</b></div></div>
 <!-- risks -->
 <section id="risk" class="sec">
-  <div class="sec-h"><span class="idx">08</span><h2 class="scr">read this first.</h2></div>
+  <div class="sec-h"><span class="idx">09</span><h2 class="scr">read this first.</h2></div>
   <div class="risks">
     <div class="rk"><b>not the share itself</b><p>an xStock tracks the share 1:1 but gives no voting rights and no legal claim on the company.</p></div>
     <div class="rk"><b>not for everyone</b><p>xStocks are not offered to US persons, and not in the UK, Canada or Australia among others. check what applies where you live.</p></div>
@@ -247,7 +263,7 @@
 
 <!-- the token (shown only once it exists) -->
 <section id="token" class="sec" hidden>
-  <div class="sec-h"><span class="idx">09</span><h2 class="scr">$st0x.</h2></div>
+  <div class="sec-h"><span class="idx">10</span><h2 class="scr">$st0x.</h2></div>
   <div class="tok">
     <div class="tok-ca"><span>ca</span><code id="tokCa"></code><button class="btn sm" id="tokCopy">[ copy ]</button></div>
     <div class="tok-st"><div><b id="tokPx">—</b><span>price</span></div><div><b id="tokMc">—</b><span>market cap</span></div><div><b id="tokCh">—</b><span>24h</span></div></div>
@@ -257,7 +273,7 @@
 
 <!-- faq -->
 <section id="faq" class="sec">
-  <div class="sec-h"><span class="idx" id="faqIdx">09</span><h2 class="scr">faq.</h2></div>
+  <div class="sec-h"><span class="idx" id="faqIdx">10</span><h2 class="scr">faq.</h2></div>
   <div class="faq" id="faqList">
     <details><summary>what is st0x?</summary><p>a terminal for trading tokenized stocks (xStocks) on solana, any hour, any day. live prices, real charts, and trades routed through jupiter that you sign yourself.</p></details>
     <details><summary>is this the real stock?</summary><p>each xStock is a token backed 1:1 by the underlying share, issued by Backed and held with custodians. it follows the price of the share, but carries no voting rights or legal claim on the company.</p></details>
@@ -265,6 +281,10 @@
     <details><summary>do you hold my money?</summary><p>no. every trade is a jupiter swap built for your wallet. you approve it in phantom, solflare or backpack, and the tokens land straight in your wallet.</p></details>
     <details><summary>what does it cost?</summary><p>st0x adds no fee. you pay the solana network fee and the pool's trading fee, which are already inside the quote you see.</p></details>
     <details><summary>who can use it?</summary><p>xStocks are not offered to US persons and are unavailable in several countries, including the UK, Canada and Australia. you are responsible for following the rules where you live.</p></details>
+    <details><summary>which stocks can i trade?</summary><p>every xStock with real liquidity on solana: the big tech names, banks, consumer brands and funds like SPY and QQQ. the board and the names section show the live list, straight from the chain.</p></details>
+    <details><summary>why is the price different from the stock?</summary><p>the token trades on its own pools. while nyse is open, traders keep the two close. when it's shut, the token prices in news and sentiment the share can't. the gap section shows the difference live.</p></details>
+    <details><summary>what are limit orders?</summary><p>orders that sit on-chain with jupiter and fill only at your price, at any hour, even with this page closed. you can cancel them any time from the terminal.</p></details>
+    <details><summary>do alerts work when i close the tab?</summary><p>no. alerts live in this browser and fire while the page is open. limit orders are the thing that works while you sleep.</p></details>
     <details><summary>what about dividends?</summary><p>they're reinvested automatically: your xStock balance grows to reflect the payout, net of withholding tax.</p></details>
   </div>
 </section>
@@ -281,8 +301,8 @@
 <script src="/assets/vendor/ScrollTrigger.min.js"></script>
 <script src="/assets/vendor/lenis.min.js"></script>
 <script src="/assets/vendor/web3.min.js" defer></script>
-<script src="/assets/city.js?v=596263"></script>
-<script src="/assets/term.js?v=596263"></script>
-<script src="/assets/st0x.js?v=596263"></script>
+<script src="/assets/city.js?v=596667"></script>
+<script src="/assets/term.js?v=596667"></script>
+<script src="/assets/st0x.js?v=596667"></script>
 </body>
 </html>
