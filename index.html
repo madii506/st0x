@@ -18,7 +18,7 @@
 <meta name="twitter:description" content="Wall Street closes at 4pm. st0x doesn't.">
 <meta name="twitter:image" content="https://st0x.vercel.app/og.png">
 <link rel="preload" href="/assets/fonts/jbmono.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/st0x.css?v=595141">
+<link rel="stylesheet" href="/assets/st0x.css?v=595484">
 </head>
 <body>
 
@@ -126,13 +126,16 @@
           <div class="ch-tf" id="chTf"><button data-tf="15m">15m</button><button data-tf="1h" class="on">1h</button><button data-tf="4h">4h</button><button data-tf="1d">1d</button></div>
         </div>
         <div class="ch-meta" id="chMeta"></div>
+        <div class="ch-depth" id="chDepth"></div>
         <div class="ch-cv"><canvas id="chCv"></canvas><div class="ch-tip" id="chTip"></div><div class="ch-msg" id="chMsg">loading candles…</div></div>
         <div class="ch-legend"><span><i class="b"></i>nyse closed, still trading on-chain</span><span id="chSrc"></span></div>
       </div>
       <aside class="tk">
         <div class="tk-side" id="tkSide"><button data-side="buy" class="on">buy</button><button data-side="sell">sell</button></div>
+        <div class="tk-type" id="tkType"><button data-t="market" class="on">market</button><button data-t="limit">limit</button></div>
         <label class="tk-l"><span id="tkPayL">you pay</span><span class="bal" id="tkBal"></span></label>
         <div class="tk-in"><input id="tkAmt" inputmode="decimal" placeholder="0.0" autocomplete="off"><button id="tkUnit">SOL</button></div>
+        <div id="tkLim" hidden><label class="tk-l"><span>limit price per share</span><span class="bal" id="tkLimNow"></span></label><div class="tk-in"><input id="tkLimPx" inputmode="decimal" placeholder="0.00" autocomplete="off"><button tabindex="-1">USD</button></div></div>
         <div class="tk-pct" id="tkPct"><button data-p="25">25%</button><button data-p="50">50%</button><button data-p="100">max</button></div>
         <label class="tk-l"><span>you get</span><span class="bal" id="tkGetUsd"></span></label>
         <div class="tk-out" id="tkOut">—</div>
@@ -152,11 +155,13 @@
       <div class="con-log" id="conLog"></div>
       <div class="con-in"><span class="pr">st0x&gt;</span><input id="conIn" autocomplete="off" spellcheck="false" placeholder="type help, or try: buy nvda 0.1 sol · alert tsla > 400 · share"><span class="con-hint" id="conHint"></span></div>
     </div>
+    <div class="od" id="od" hidden><div class="pf-h"><b>open limit orders</b><span id="odN"></span></div><div class="od-list" id="odList"></div></div>
     <div class="pf" id="pf" hidden><div class="pf-h"><b>your bag</b><span id="pfTot"></span></div><div class="pf-list" id="pfList"></div></div>
   </div>
 </section>
 
 
+<div class="band" aria-hidden="true"><div class="band-run" id="band1"><span>wall street closes at 4pm</span><b>·</b><span>st<em>0</em>x doesn't</span><b>·</b><span>wall street closes at 4pm</span><b>·</b><span>st<em>0</em>x doesn't</span><b>·</b></div></div>
 <!-- the board: heatmap -->
 <section id="board" class="sec">
   <div class="sec-h"><span class="idx">04</span><h2 class="scr">the board.</h2></div>
@@ -209,6 +214,7 @@
   </div>
 </section>
 
+<div class="band alt" aria-hidden="true"><div class="band-run" id="band2"><span>nvda at 3am</span><b>·</b><span>tsla on a sunday</span><b>·</b><span>spy on christmas</span><b>·</b><span>nvda at 3am</span><b>·</b><span>tsla on a sunday</span><b>·</b><span>spy on christmas</span><b>·</b></div></div>
 <!-- risks -->
 <section id="risk" class="sec">
   <div class="sec-h"><span class="idx">07</span><h2 class="scr">read this first.</h2></div>
@@ -258,8 +264,8 @@
 <script src="/assets/vendor/ScrollTrigger.min.js"></script>
 <script src="/assets/vendor/lenis.min.js"></script>
 <script src="/assets/vendor/web3.min.js" defer></script>
-<script src="/assets/city.js?v=595141"></script>
-<script src="/assets/term.js?v=595141"></script>
-<script src="/assets/st0x.js?v=595141"></script>
+<script src="/assets/city.js?v=595484"></script>
+<script src="/assets/term.js?v=595484"></script>
+<script src="/assets/st0x.js?v=595484"></script>
 </body>
 </html>
