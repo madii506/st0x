@@ -39,6 +39,7 @@
     const icv = $('#introCv'), cur = $('#introCur'), g = City.build(innerWidth, hero.clientHeight || innerHeight, fsFor(innerWidth), heroFade());
     let blink = gsap.to(cur, { opacity: 0, duration: .01, repeat: 3, yoyo: true, repeatDelay: .13, ease: 'none' });
     let finished = false; const end = () => { if (finished) return; finished = true; try { sessionStorage.setItem('st0x-intro', '1'); } catch { }
+      if (document.hidden) { const el = $('#intro'); if (el) el.remove(); document.body.classList.remove('locked'); lenis && lenis.start(); heroIn(true); ScrollTrigger.refresh(); return; }
       blink.kill(); gsap.set(cur, { opacity: 1 }); const tgt = $('#heroStatus .ours i').getBoundingClientRect(), now = cur.getBoundingClientRect();
       // the cursor flies down into the 'st0x open' light
       const tl = gsap.timeline({ onComplete: () => { $('#intro').remove(); document.body.classList.remove('locked'); lenis && lenis.start(); ScrollTrigger.refresh(); } });

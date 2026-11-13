@@ -288,3 +288,4 @@ body.locked{overflow:hidden}
 .bl-h{color:var(--mute);font-size:11px;letter-spacing:.08em}
 .bl{display:inline-flex;align-items:center;gap:8px;font-weight:700}.bl img,.bl-svg{width:20px;height:20px;border-radius:50%}.bl-svg{border-radius:0;color:var(--ink)}
 .bx{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--ink);color:#fff;font-size:9px;font-weight:800}
+@media (max-width:640px){.status .sep{display:none}}
