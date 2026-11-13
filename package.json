@@ -1,0 +1,5 @@
+{
+  "name": "st0x",
+  "private": true,
+  "engines": { "node": "22.x" }
+}
