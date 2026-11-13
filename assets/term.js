@@ -109,7 +109,8 @@
     $$('#tkType button').forEach(b => b.classList.toggle('on', b.dataset.t === S.type)); $('#tkLim').hidden = S.type !== 'limit'; $('#tkLimNow').textContent = 'now ' + usd(s.usd);
     $$('#tkSide button').forEach(b => b.classList.toggle('on', b.dataset.side === S.side)); $('#tkUnit').textContent = S.side === 'buy' ? S.unit : s.tok;
     $('#tkPayL').textContent = S.side === 'buy' ? 'you pay' : 'you sell'; const h = heldOf(pay); $('#tkBal').textContent = h ? 'balance ' + num(h.ui, S.side === 'buy' ? 4 : 6) : '';
-    const go = $('#tkGo'); go.classList.toggle('sell', S.side === 'sell'); paintQuote(); }
+    $('#tkNote').textContent = S.type === 'limit' ? 'limit orders sit on-chain with jupiter and fill at your price, any hour, even with this tab closed. cancel any time.' : 'jupiter finds the route. your wallet signs. st0x never holds funds.';
+    const go = $('#tkGo'); go.classList.toggle('sell', S.side === 'sell'); S.type === 'limit' ? paintLimit() : paintQuote(); }
   function rawIn() { const L = legs(), v = parseFloat(String($('#tkAmt').value).replace(/,/g, '')); if (!L || !(v > 0)) return null; const d = decOf(L.pay); return BigInt(Math.floor(v * 10 ** Math.min(d, 9))) * (d > 9 ? 10n ** BigInt(d - 9) : 1n); }
   let qTimer = 0, qReq = 0;
   function requote() { clearTimeout(qTimer); S.quote = null; if (S.type === 'limit') { paintLimit(); return; } paintQuote(true); qTimer = setTimeout(getQuote, 380); }

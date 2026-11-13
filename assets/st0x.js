@@ -150,6 +150,9 @@
     ScrollTrigger.create({ trigger: '#nums', start: 'top 85%', once: true, onEnter: () => { if (S.board) countNums(); else X.on(() => countNums()); } });
     // a packet travels along each arrow
     $$('.farrow').forEach((a, i) => { const d = document.createElement('i'); d.className = 'dot'; a.appendChild(d); gsap.fromTo(d, { left: '0%', opacity: 0 }, { left: 'calc(100% - 7px)', opacity: 1, duration: 1.3, ease: 'power1.inOut', repeat: -1, repeatDelay: 1.4, delay: i * .45, keyframes: { opacity: [0, 1, 1, 0] } }); });
+    // big type bands that run faster when you scroll faster
+    $$('.band-run').forEach((el, i) => { let x = 0, w = 0; const dir = i % 2 ? 1 : -1; const measure = () => { w = el.scrollWidth / 2; }; measure(); addEventListener('resize', measure); addEventListener('load', measure);
+      gsap.ticker.add((t, dt) => { const v = lenis ? Math.abs(lenis.velocity || 0) : 0; x += dir * (0.04 + v * 0.02) * dt; if (w) { if (x <= -w) x += w; if (x > 0) x -= w; } el.style.transform = `translate3d(${x}px,0,0)`; }); });
     // footer wordmark decodes
     ScrollTrigger.create({ trigger: '#foot', start: 'top 85%', once: true, onEnter: () => decode($('#footWm'), 1100) });
   }
