@@ -35,7 +35,7 @@
 
   // ================================================================ shared state
   const LS = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }, SV = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { } };
-  const S = { fav: new Set(LS('st0x-fav', [])), alerts: LS('st0x-alerts', []), board: null, sel: null, tf: '1h', side: 'buy', unit: 'SOL', slip: 100, wallet: null, provider: null, bag: null, quote: null, subs: [], sort: 'liq', q: '' };
+  const S = { fav: new Set(LS('st0x-fav', [])), alerts: LS('st0x-alerts', []), type: 'market', orders: [], board: null, sel: null, tf: '1h', side: 'buy', unit: 'SOL', slip: 100, wallet: null, provider: null, bag: null, quote: null, subs: [], sort: 'liq', q: '' };
   window.S0 = { S, et, nyse, dur, etLabel, openAt, setSchedule, MKT, HOLNAME, usd, big, pct, cls, num, esc, toast, on: f => S.subs.push(f), select: m => select(m), connect: () => openWallets() };
 
   async function loadBoard() { try { const b = await getJ(API + '?a=board'); const prev = S.board; S.board = b; paintList(prev); paintBar(); if (!S.sel) select(pickDefault()); else paintSel(); S.subs.forEach(f => { try { f(b); } catch (e) { console.error(e); } }); checkAlerts(); }
@@ -54,7 +54,7 @@
   function paintBar() { const b = S.board; $('#tbSol').textContent = 'sol ' + usd(b.sol, 2); $('#tbCount').textContent = b.count + ' stocks'; }
 
   // ================================================================ selection + chart
-  function select(mint) { if (!mint || !byMint(mint)) return; S.sel = mint; S.quote = null; paintList(); paintSel(); loadCandles(); requote(); }
+  function select(mint) { if (!mint || !byMint(mint)) return; S.sel = mint; S.quote = null; paintList(); paintSel(); loadCandles(); requote(); clearTimeout(select.dt); select.dt = setTimeout(loadDepth, 500); }
   function paintSel() { const s = byMint(S.sel); if (!s) return; $('#chIcon').src = s.icon; $('#chSym').textContent = s.tok; $('#chName').textContent = s.name + ' · ' + s.sym;
     $('#chPx').textContent = usd(s.usd); const c = $('#chCh'); c.textContent = pct(s.ch24) + ' 24h'; c.className = cls(s.ch24);
     $('#chMeta').innerHTML = [['liquidity', big(s.liq)], ['24h volume', big(s.vol24)], ['holders', s.holders ? num(s.holders, 0) : '—'], ['share price', s.ref ? usd(s.ref) : '—'], ['gap', `<span class="${cls(s.gap)}">${pct(s.gap)}</span>`]].map(([k, v]) => `<span>${k} <b>${v}</b></span>`).join('');
@@ -105,13 +105,14 @@
   function decOf(m) { if (m === SOL) return 9; if (m === USDC) return 6; const s = byMint(m); return s ? s.decimals ?? 8 : 8; }
   function legs() { const s = byMint(S.sel); if (!s) return null; const pay = S.side === 'buy' ? (S.unit === 'USDC' ? USDC : SOL) : s.mint, get = S.side === 'buy' ? s.mint : (S.unit === 'USDC' ? USDC : SOL); return { s, pay, get }; }
   function heldOf(m) { if (!S.bag) return null; if (m === SOL) return { ui: S.bag.sol, raw: String(Math.floor(S.bag.sol * 1e9)) }; if (m === USDC) return { ui: S.bag.usdc, raw: String(Math.floor(S.bag.usdc * 1e6)) }; const t = S.bag.stocks.find(x => x.mint === m); return t ? { ui: t.amount, raw: t.raw } : { ui: 0, raw: '0' }; }
-  function paintTicket() { const L = legs(); if (!L) return; const { s, pay } = L;
+  function paintTicket() { if (S.type === 'limit') S.unit = 'USDC'; const L = legs(); if (!L) return; const { s, pay } = L;
+    $$('#tkType button').forEach(b => b.classList.toggle('on', b.dataset.t === S.type)); $('#tkLim').hidden = S.type !== 'limit'; $('#tkLimNow').textContent = 'now ' + usd(s.usd);
     $$('#tkSide button').forEach(b => b.classList.toggle('on', b.dataset.side === S.side)); $('#tkUnit').textContent = S.side === 'buy' ? S.unit : s.tok;
     $('#tkPayL').textContent = S.side === 'buy' ? 'you pay' : 'you sell'; const h = heldOf(pay); $('#tkBal').textContent = h ? 'balance ' + num(h.ui, S.side === 'buy' ? 4 : 6) : '';
     const go = $('#tkGo'); go.classList.toggle('sell', S.side === 'sell'); paintQuote(); }
   function rawIn() { const L = legs(), v = parseFloat(String($('#tkAmt').value).replace(/,/g, '')); if (!L || !(v > 0)) return null; const d = decOf(L.pay); return BigInt(Math.floor(v * 10 ** Math.min(d, 9))) * (d > 9 ? 10n ** BigInt(d - 9) : 1n); }
   let qTimer = 0, qReq = 0;
-  function requote() { clearTimeout(qTimer); S.quote = null; paintQuote(true); qTimer = setTimeout(getQuote, 380); }
+  function requote() { clearTimeout(qTimer); S.quote = null; if (S.type === 'limit') { paintLimit(); return; } paintQuote(true); qTimer = setTimeout(getQuote, 380); }
   async function getQuote() { const L = legs(), amt = rawIn(); if (!L || !amt) { S.quote = null; paintQuote(); return null; } const id = ++qReq;
     try { const q = await getJ(`${JUP}/swap/v1/quote?inputMint=${L.pay}&outputMint=${L.get}&amount=${amt}&slippageBps=${S.slip}&restrictIntermediateTokens=true`); if (id !== qReq) return null; S.quote = { q, L, at: Date.now() }; paintQuote(); return S.quote; }
     catch (e) { if (id !== qReq) return null; S.quote = { err: /could not find any route|no route/i.test(e.message) ? 'no route for this size right now' : e.message }; paintQuote(); return null; } }
@@ -135,9 +136,9 @@
   async function connectWith(n) { const w = WALLETS.find(x => x[0] === n), p = w && w[1](); if (!p) { window.open(w[2], '_blank', 'noopener'); return; }
     try { const r = await p.connect(); onConnect(((r && r.publicKey) || p.publicKey).toString(), p); $('#wm').hidden = true; } catch { toast('connection cancelled'); } }
   function onConnect(pk, p) { S.wallet = pk; S.provider = p; if (p.on && !p._st0x) { p._st0x = 1; try { p.on('accountChanged', k => k ? onConnect(k.toString(), p) : disconnect()); } catch { } }
-    const short = pk.slice(0, 4) + '…' + pk.slice(-4); $('#tbWallet').textContent = `[ ${short} ]`; $('#navWallet').textContent = `[ ${short} ]`; log(`connected ${short}`, 'ok'); loadBag(); paintQuote(); }
-  async function disconnect() { try { await S.provider.disconnect(); } catch { } S.wallet = null; S.provider = null; S.bag = null; $('#tbWallet').textContent = '[ connect wallet ]'; $('#navWallet').textContent = '[ connect ]'; $('#pf').hidden = true; paintTicket(); log('disconnected', 'dim'); }
-  async function loadBag() { if (!S.wallet) return; try { S.bag = await getJ(`${API}?a=wallet&addr=${S.wallet}`); paintBag(); paintTicket(); } catch (e) { log('could not read your wallet: ' + e.message, 'er'); } }
+    const short = pk.slice(0, 4) + '…' + pk.slice(-4); $('#tbWallet').textContent = `[ ${short} ]`; $('#navWallet').textContent = `[ ${short} ]`; log(`connected ${short}`, 'ok'); loadBag(); loadOrders(); paintQuote(); }
+  async function disconnect() { try { await S.provider.disconnect(); } catch { } S.wallet = null; S.provider = null; S.bag = null; $('#tbWallet').textContent = '[ connect wallet ]'; $('#navWallet').textContent = '[ connect ]'; $('#pf').hidden = true; $('#od').hidden = true; S.orders = []; paintTicket(); log('disconnected', 'dim'); }
+  async function loadBag() { if (!S.wallet) return; try { S.bag = await getJ(`${API}?a=wallet&addr=${S.wallet}`); paintBag(); paintTicket(); if (S.type === 'limit') paintLimit(); } catch (e) { log('could not read your wallet: ' + e.message, 'er'); } }
   function paintBag() { const b = S.bag; if (!b) return; $('#pf').hidden = false; $('#pfTot').textContent = `${num(b.sol, 4)} SOL${b.usdc ? ' · ' + num(b.usdc, 2) + ' USDC' : ''} · total ${usd(b.totalUsd, 2)}`;
     $('#pfList').innerHTML = b.stocks.length ? b.stocks.map(t => `<button class="pfi" data-m="${t.mint}"><img src="${esc(t.icon)}" alt="">${esc(t.tok)} <b>${num(t.amount, 6)}</b><span>${usd(t.usd, 2)}</span></button>`).join('') : '<span class="dim" style="font-size:12px;color:var(--mute)">no xStocks in this wallet yet.</span>'; }
 
@@ -163,7 +164,7 @@
   // ================================================================ since the bell: what the token did while nyse was shut (or since today's open)
   function sinceClose() { const rows = CH.rows; if (!rows || rows.length < 3 || S.tf === '1d') return null; const s = byMint(S.sel); if (!s || !s.usd) return null; const n = nyse();
     if (!n.open) { for (let i = rows.length - 1; i >= 0; i--) if (!closedAt(rows[i].t)) { const at = (rows[i].t + TFS[S.tf]) * 1000; return { kind: 'closed', at, px: rows[i].c, ch: (s.usd / rows[i].c - 1) * 100 }; } return null; }
-    let i = rows.length - 1; while (i > 0 && !closedAt(rows[i - 1].t)) i--; if (closedAt(rows[i].t)) return null; return { kind: 'open', at: rows[i].t * 1000, px: rows[i].o, ch: (s.usd / rows[i].o - 1) * 100 }; }
+    let i = rows.length - 1; while (i > 0 && !closedAt(rows[i - 1].t)) i--; if (closedAt(rows[i].t)) return null; const p = et(Date.now()), ss = session(p.y, p.m, p.d, p.wd); return { kind: 'open', at: ss.closed ? rows[i].t * 1000 : ss.start, px: rows[i].o, ch: (s.usd / rows[i].o - 1) * 100 }; }
   function paintSince() { const m = $('#chMeta'); if (!m) return; const old = m.querySelector('.since'); if (old) old.remove(); const v = sinceClose(); if (!v) return;
     const el = document.createElement('span'); el.className = 'since'; el.innerHTML = `${v.kind === 'closed' ? 'since nyse closed' : 'since the open'} (${etLabel(v.at)}) <b class="${cls(v.ch)}">${pct(v.ch)}</b>`; m.prepend(el); }
 
@@ -200,10 +201,51 @@
     $('#wmList').innerHTML = `<img class="shot" src="${url}" alt="share card"><div class="mrow"><a class="btn" download="st0x-${esc(s.tok)}.png" href="${url}">[ download png ]</a><a class="btn ghost" target="_blank" rel="noopener" href="https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(location.origin)}">[ post on 𝕏 ]</a></div><p class="fine" style="margin-top:10px">download the card, then attach it to your post.</p>`;
     box.querySelector('.fine:last-child') && (box.querySelector(':scope > .fine').hidden = true); $('#wm').hidden = false; }
 
+
+  // ================================================================ limit orders (Jupiter Trigger): they sit on-chain and fill at any hour, even with this tab closed
+  const usdcOf = () => (S.bag && S.bag.usdc) || 0;
+  function limitView() { const s = byMint(S.sel), amt = parseFloat($('#tkAmt').value), px = parseFloat($('#tkLimPx').value); if (!s || !(amt > 0) || !(px > 0)) return null;
+    const buy = S.side === 'buy', shares = buy ? amt / px : amt, usdcAmt = buy ? amt : amt * px; return { s, buy, amt, px, shares, usdc: usdcAmt, vs: s.usd ? (px / s.usd - 1) * 100 : null }; }
+  function paintLimit() { const go = $('#tkGo'), v = limitView(), set = (k, x) => $(k).innerHTML = x;
+    if (!v) { $('#tkOut').textContent = '—'; $('#tkGetUsd').textContent = ''; ['#qPx', '#qVs', '#qImp', '#qMin', '#qRoute'].forEach(k => set(k, '—')); go.disabled = !!S.wallet; go.textContent = S.wallet ? '[ amount + limit price ]' : '[ connect wallet ]'; return; }
+    $('#tkOut').textContent = v.buy ? `${num(v.shares, 6)} ${v.s.tok}` : `${num(v.usdc, 2)} USDC`; $('#tkGetUsd').textContent = '≈ ' + usd(v.usdc, 2);
+    set('#qPx', usd(v.px) + ' / share'); set('#qVs', `<span class="${v.buy ? (v.vs <= 0 ? 'u' : 'd') : (v.vs >= 0 ? 'u' : 'd')}">${pct(v.vs)}</span>`); set('#qImp', 'none, fills at your price'); set('#qMin', v.buy ? `${num(v.shares, 6)} ${v.s.tok}` : `${num(v.usdc, 2)} USDC`); set('#qRoute', 'jupiter limit order');
+    const short = S.wallet && S.bag && (v.buy ? usdcOf() < v.usdc : (heldOf(v.s.mint) || { ui: 0 }).ui < v.amt);
+    go.disabled = !!(S.wallet && (short || v.usdc < 5)); go.textContent = !S.wallet ? '[ connect wallet ]' : v.usdc < 5 ? '[ minimum is $5 ]' : short ? `[ not enough ${v.buy ? 'USDC' : v.s.tok} ]` : `[ place limit ${S.side} ]`; }
+  async function signSend(b64tx) { const tx = solanaWeb3.VersionedTransaction.deserialize(b64(b64tx)); let sig;
+    if (S.provider.signAndSendTransaction) { const r = await S.provider.signAndSendTransaction(tx); sig = typeof r === 'string' ? r : r.signature; }
+    else { const signed = await S.provider.signTransaction(tx); let bin = ''; signed.serialize().forEach(c => bin += String.fromCharCode(c)); sig = (await getJ(`${API}?a=send`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ tx: btoa(bin) }) })).sig; }
+    if (sig && typeof sig !== 'string') sig = solanaWeb3.bs58 ? solanaWeb3.bs58.encode(sig) : String(sig);
+    for (let i = 0; i < 40; i++) { await new Promise(r => setTimeout(r, 1500)); const st = await getJ(`${API}?a=tx&sig=${sig}`).catch(() => null); if (st && st.err) throw new Error('the transaction failed on-chain'); if (st && /confirmed|finalized/.test(st.status || '')) return sig; }
+    return sig; }
+  async function placeLimit() { const v = limitView(); if (!v) { toast('enter an amount and a limit price'); return; } if (v.usdc < 5) { toast('limit orders start at $5'); return; } if (!window.solanaWeb3) { toast('still loading, try again'); return; }
+    const go = $('#tkGo'); go.disabled = true; go.textContent = '[ building… ]';
+    const dec = v.s.decimals ?? 8, body = v.buy ? { inputMint: USDC, outputMint: v.s.mint, makingAmount: String(Math.floor(v.usdc * 1e6)), takingAmount: String(Math.floor(v.shares * 10 ** dec)) } : { inputMint: v.s.mint, outputMint: USDC, makingAmount: String(Math.floor(v.amt * 10 ** dec)), takingAmount: String(Math.floor(v.usdc * 1e6)) };
+    try { const r = await getJ(`${JUP}/trigger/v1/createOrder`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ inputMint: body.inputMint, outputMint: body.outputMint, maker: S.wallet, payer: S.wallet, params: { makingAmount: body.makingAmount, takingAmount: body.takingAmount }, computeUnitPrice: 'auto' }) });
+      if (!r.transaction) throw new Error(r.error || r.cause || 'could not build the order'); go.textContent = '[ approve in wallet… ]'; log(`limit ${S.side} ${num(v.shares, 6)} ${v.s.tok} at ${usd(v.px)} · waiting for your wallet…`, 'dim');
+      const sig = await signSend(r.transaction); log(`limit order placed · <a href="https://solscan.io/tx/${esc(sig)}" target="_blank" rel="noopener">solscan</a>. it fills on-chain when ${v.s.tok} ${v.buy ? 'drops to' : 'rises to'} ${usd(v.px)}, any hour.`, 'ok', true); toast('limit order placed'); $('#tkAmt').value = ''; loadOrders(); loadBag(); }
+    catch (e) { const m = /reject|cancel|denied|declined/i.test(e.message || '') ? 'cancelled in wallet' : e.message; log(m, 'er'); toast(m); }
+    paintLimit(); }
+  async function loadOrders() { if (!S.wallet) return; try { const j = await getJ(`${JUP}/trigger/v1/getTriggerOrders?user=${S.wallet}&orderStatus=active`); S.orders = j.orders || []; paintOrders(); } catch { } }
+  function orderView(o) { const inM = o.inputMint, outM = o.outputMint, buy = inM === USDC, s = byMint(buy ? outM : inM); if (!s) return null;
+    const mk = +(o.makingAmount ?? o.remainingMakingAmount ?? 0), tk = +(o.takingAmount ?? o.remainingTakingAmount ?? 0), shares = buy ? tk : mk, usdcAmt = buy ? mk : tk;
+    return { key: o.orderKey || o.order || o.publicKey, buy, s, shares, usdc: usdcAmt, px: shares ? usdcAmt / shares : null, at: o.createdAt }; }
+  function paintOrders() { const L = S.orders.map(orderView).filter(Boolean); $('#od').hidden = !L.length; $('#odN').textContent = L.length ? L.length + ' open · they fill on-chain, any hour' : '';
+    $('#odList').innerHTML = L.map((o, i) => `<div class="odr"><b class="s ${o.buy ? 'b' : 'x'}">${o.buy ? 'buy' : 'sell'}</b><span>${num(o.shares, 6)} ${esc(o.s.tok)}</span><span>at ${usd(o.px)}</span><span>now ${usd(o.s.usd)}</span><button data-o="${esc(o.key)}">[ cancel ]</button></div>`).join(''); }
+  async function cancelOrder(key) { if (!S.wallet || !key) return; try { const r = await getJ(`${JUP}/trigger/v1/cancelOrder`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ maker: S.wallet, computeUnitPrice: 'auto', order: key }) });
+      if (!r.transaction) throw new Error(r.error || 'could not cancel'); log('cancelling… approve in your wallet', 'dim'); const sig = await signSend(r.transaction); log(`order cancelled · <a href="https://solscan.io/tx/${esc(sig)}" target="_blank" rel="noopener">solscan</a>`, 'ok', true); loadOrders(); loadBag(); }
+    catch (e) { log(/reject|cancel|denied/i.test(e.message) ? 'cancel declined in wallet' : e.message, 'er'); } }
+
+  // ================================================================ depth: what size moves the price right now (live Jupiter quotes)
+  let depthReq = 0;
+  async function loadDepth() { const s = byMint(S.sel), el = $('#chDepth'); if (!s || !el) return; const id = ++depthReq; el.innerHTML = '<span>depth: quoting…</span>';
+    const sizes = [100, 1000, 10000, 50000]; const res = await Promise.all(sizes.map(u => getJ(`${JUP}/swap/v1/quote?inputMint=${USDC}&outputMint=${s.mint}&amount=${u * 1e6}&slippageBps=300&restrictIntermediateTokens=true`).then(q => +q.priceImpactPct * 100).catch(() => null)));
+    if (id !== depthReq) return; el.innerHTML = '<span>buy impact now:</span>' + sizes.map((u, i) => `<span>$${u >= 1000 ? u / 1000 + 'k' : u} <b class="${res[i] != null && res[i] > 1 ? 'd' : ''}">${res[i] == null ? 'no route' : res[i] < .01 ? '<0.01%' : res[i].toFixed(2) + '%'}</b></span>`).join('') + `<span>${nyse().open ? '' : 'nyse closed: thinner books'}</span>`; }
+
   // ================================================================ console
   const hist = []; let hi = 0, pending = null;
   function log(html, c, raw) { const p = document.createElement('p'); p.className = c || ''; p.innerHTML = raw ? html : esc(html); $('#conLog').appendChild(p); $('#conLog').scrollTop = 1e9; return p; }
-  const HELP = [['buy nvda 0.1', 'buy NVDAx with 0.1 SOL (add usdc to pay in USDC, or $20)'], ['sell tsla 50%', 'sell half your TSLAx (or an amount, or all)'], ['price spy', 'live on-chain price and the real share price'], ['gap', 'the biggest gaps between token and share right now'], ['top', "today's biggest movers"], ['chart aapl 4h', 'open a chart (15m, 1h, 4h, 1d)'], ['hours', 'is nyse open? when does it change?'], ['alert nvda > 170', 'ping me when a price crosses (kept in this browser)'], ['alerts / unalert 1', 'list or remove alerts'], ['fav nvda', 'star a stock; starred ones sit on top'], ['share', 'make a png card of the open stock for X'], ['since', 'what it did since nyse closed (or opened)'], ['bag', 'your wallet: SOL, USDC and xStocks'], ['connect / disconnect', 'link or unlink a wallet'], ['clear', 'clear this log']];
+  const HELP = [['buy nvda 0.1', 'buy NVDAx with 0.1 SOL (add usdc to pay in USDC, or $20)'], ['sell tsla 50%', 'sell half your TSLAx (or an amount, or all)'], ['price spy', 'live on-chain price and the real share price'], ['gap', 'the biggest gaps between token and share right now'], ['top', "today's biggest movers"], ['chart aapl 4h', 'open a chart (15m, 1h, 4h, 1d)'], ['hours', 'is nyse open? when does it change?'], ['alert nvda > 170', 'ping me when a price crosses (kept in this browser)'], ['alerts / unalert 1', 'list or remove alerts'], ['fav nvda', 'star a stock; starred ones sit on top'], ['share', 'make a png card of the open stock for X'], ['limit buy nvda 50 @ 150', 'a limit order that fills on-chain, any hour (USDC)'], ['orders / cancel 1', 'your open limit orders'], ['depth nvda', 'how much size moves the price right now'], ['since', 'what it did since nyse closed (or opened)'], ['bag', 'your wallet: SOL, USDC and xStocks'], ['connect / disconnect', 'link or unlink a wallet'], ['clear', 'clear this log']];
   function stockArg(t) { const s = bySym(t); if (!s) { log(`unknown stock "${t}". try nvda, tsla, spy, aapl…`, 'er'); return null; } return s; }
   async function run(line) { const raw = line.trim(); if (!raw) return; log(raw, 'me'); hist.push(raw); hi = hist.length; const [cmd, ...a] = raw.toLowerCase().split(/\s+/);
     if (pending && /^(y|yes|sign|ok)$/.test(cmd)) { const p = pending; pending = null; return p(); } if (pending && /^(n|no|cancel)$/.test(cmd)) { pending = null; return log('cancelled.', 'dim'); } pending = null;
@@ -231,6 +273,16 @@
         const act = document.createElement('span'); act.className = 'act'; act.innerHTML = `<button>sign</button><button class="no">cancel</button>`; p.appendChild(act);
         pending = () => { act.remove(); return execute(); }; act.children[0].onclick = () => { if (pending) { const f = pending; pending = null; f(); } }; act.children[1].onclick = () => { pending = null; act.remove(); log('cancelled.', 'dim'); };
         if (!S.wallet) log('type y to connect and sign, or press sign.', 'dim'); else log('type y or press sign to approve it in your wallet.', 'dim'); return; }
+      case 'limit': { const side = a[0]; if (side !== 'buy' && side !== 'sell') return log('e.g. limit buy nvda 50 @ 150   (buys use USDC)   ·   limit sell tsla 0.1 @ 420', 'dim');
+        const s = stockArg(a[1]); if (!s) return; const amt = parseFloat(String(a[2] || '').replace('$', '')), at = a.indexOf('@'), px = parseFloat(String(at >= 0 ? a[at + 1] : a[3] || '').replace('$', ''));
+        if (!(amt > 0) || !(px > 0)) return log(`e.g. limit ${side} ${s.sym.toLowerCase()} ${side === 'buy' ? '50' : '0.1'} @ ${(s.usd * (side === 'buy' ? .97 : 1.03)).toFixed(2)}`, 'dim');
+        S.type = 'limit'; S.side = side; select(s.mint); $('#tkAmt').value = String(amt); $('#tkLimPx').value = String(px); paintTicket(); paintLimit(); const v = limitView();
+        const p = log(`limit ${side} ${num(v.shares, 6)} ${s.tok} at ${usd(px)} (${pct(v.vs)} vs now) · ${v.buy ? 'pays ' + num(v.usdc, 2) + ' USDC' : 'gets ' + num(v.usdc, 2) + ' USDC'} · fills on-chain any hour`);
+        const act = document.createElement('span'); act.className = 'act'; act.innerHTML = '<button>place</button><button class="no">cancel</button>'; p.appendChild(act);
+        pending = () => { act.remove(); return S.wallet ? placeLimit() : openWallets(); }; act.children[0].onclick = () => { if (pending) { const f = pending; pending = null; f(); } }; act.children[1].onclick = () => { pending = null; act.remove(); log('cancelled.', 'dim'); }; return; }
+      case 'orders': { if (!S.wallet) return log('connect a wallet first: type connect', 'dim'); await loadOrders(); const L = S.orders.map(orderView).filter(Boolean); return log(L.length ? L.map((o, i) => `${i + 1}. ${o.buy ? 'buy ' : 'sell'} ${num(o.shares, 6)} ${o.s.tok} at ${usd(o.px)} (now ${usd(o.s.usd)})`).join('\n') : 'no open limit orders.', 'dim'); }
+      case 'cancel': { const L = S.orders.map(orderView).filter(Boolean), o = L[(+a[0] || 0) - 1]; if (!o) return log('which one? type orders, then cancel 1', 'dim'); return cancelOrder(o.key); }
+      case 'depth': { const s = a[0] ? stockArg(a[0]) : byMint(S.sel); if (!s) return; select(s.mint); await new Promise(r => setTimeout(r, 1800)); return log($('#chDepth').textContent, 'dim'); }
       case 'alert': { const s = stockArg(a[0]); if (!s) return; let op = a[1], px = parseFloat(String(a[2] ?? a[1]).replace('$', ''));
         if (!(px > 0)) return log('e.g. alert nvda > 170  or  alert tsla < 380', 'dim'); if (op !== '>' && op !== '<') op = px >= s.usd ? '>' : '<';
         const al = addAlert(s, op, px); return log(`alert set: ${s.tok} ${op} ${usd(px)} (now ${usd(s.usd)}). it fires while this tab is open.`, 'ok'); }
@@ -257,7 +309,11 @@
     $('#tkAmt').addEventListener('input', requote);
     $('#tkPct').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; const L = legs(); if (!S.wallet) { openWallets(); return; } const h = heldOf(L.pay); if (!h) return; let v = h.ui * (+b.dataset.p / 100); if (L.pay === SOL) v = Math.max(0, Math.min(v, h.ui - .015)); $('#tkAmt').value = v > 0 ? String(+v.toFixed(L.pay === SOL ? 4 : 8)) : ''; requote(); });
     $('#qSlip').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.slip = +b.dataset.b; $$('#qSlip button').forEach(x => x.classList.toggle('on', x === b)); requote(); });
-    $('#tkGo').addEventListener('click', () => S.wallet ? execute() : openWallets());
+  
+    $('#tkGo').addEventListener('click', () => !S.wallet ? openWallets() : S.type === 'limit' ? placeLimit() : execute());
+    $('#tkType').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || S.type === b.dataset.t) return; S.type = b.dataset.t; if (S.type === 'market') S.unit = 'SOL'; paintTicket(); requote(); });
+    $('#tkLimPx').addEventListener('input', requote);
+    $('#odList').addEventListener('click', e => { const b = e.target.closest('[data-o]'); if (b) cancelOrder(b.dataset.o); });
     $('#tbWallet').addEventListener('click', () => S.wallet ? disconnect() : openWallets());
     $('#navWallet').addEventListener('click', () => S.wallet ? disconnect() : openWallets());
     $('#wmList').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (b) connectWith(b.dataset.w); });
@@ -265,6 +321,8 @@
     $('#chStar').addEventListener('click', () => { const m = S.sel; S.fav.has(m) ? S.fav.delete(m) : S.fav.add(m); SV('st0x-fav', [...S.fav]); paintList(); paintSel(); });
     $('#chAlert').addEventListener('click', () => { const s = byMint(S.sel); if (!s) return; const t = +(s.usd * 1.02).toPrecision(4); $('#conIn').value = `alert ${s.sym.toLowerCase()} > ${t}`; $('#conIn').focus({ preventScroll: true }); log('edit the price and press enter to set the alert.', 'dim'); });
     $('#chShare').addEventListener('click', shareCard);
+    addEventListener('keydown', e => { const typing = /INPUT|TEXTAREA/.test((document.activeElement || {}).tagName || ''); if (typing || e.metaKey || e.ctrlKey || e.altKey) return; const r = $('#term').getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) return;
+      if (e.key === '/') { e.preventDefault(); $('#wlQ').focus(); } else if (e.key === 'b' || e.key === 's') { S.side = e.key === 'b' ? 'buy' : 'sell'; paintTicket(); requote(); } else if (['1', '2', '3', '4'].includes(e.key)) { setTf(['15m', '1h', '4h', '1d'][+e.key - 1]); loadCandles(); } });
     addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); $('#terminal').scrollIntoView({ block: 'center' }); $('#conIn').focus({ preventScroll: true }); } });
     const ci = $('#conIn'); ci.addEventListener('input', hint);
     ci.addEventListener('keydown', e => { if (e.key === 'Enter') { const v = ci.value; ci.value = ''; hint(); run(v); }
@@ -275,6 +333,6 @@
     // silent reconnect for wallets the visitor already trusted
     setTimeout(async () => { const p = window.phantom && window.phantom.solana; if (p && p.connect) { try { const r = await p.connect({ onlyIfTrusted: true }); if (r && r.publicKey) onConnect(r.publicKey.toString(), p); } catch { } } }, 900);
   }
-  function start() { wire(); loadBoard(); setInterval(() => { if (!document.hidden) loadBoard(); }, 20000); setInterval(() => { if (!document.hidden && S.sel) loadCandles(); }, 90000); setInterval(() => { if (S.quote && !S.quote.err && Date.now() - S.quote.at > 15000) requote(); }, 5000); }
+  function start() { wire(); loadBoard(); setInterval(() => { if (!document.hidden) loadBoard(); }, 20000); setInterval(() => { if (!document.hidden && S.sel) loadCandles(); }, 90000); setInterval(() => { if (S.quote && !S.quote.err && Date.now() - S.quote.at > 15000) requote(); }, 5000); setInterval(() => { if (!document.hidden) { loadDepth(); loadOrders(); } }, 60000); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
