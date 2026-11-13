@@ -37,7 +37,7 @@
   function overlay() { let o = $('#intro'); if (!o) { o = document.createElement('div'); o.id = 'intro'; o.setAttribute('aria-hidden', 'true'); o.innerHTML = '<canvas id="introCv"></canvas><i id="introCur"></i>'; document.body.prepend(o); } return o; }
   function playIntro() { if (playing || !window.City) return; playing = true; document.documentElement.classList.remove('nointro'); const o = overlay(); document.body.classList.add('locked'); lenis && lenis.stop(); scrollTo(0, 0);
     const icv = $('#introCv'), cur = $('#introCur'); gsap.set([o, icv, cur], { clearProps: 'all' });
-    const g = City.build(innerWidth, hero.clientHeight || innerHeight, fsFor(innerWidth), heroFade());
+    const W = innerWidth, H = hero.clientHeight || innerHeight, g = City.ready() ? City.build(W, H, fsFor(W), heroFade()) : City.bare(W, H, fsFor(W));
     const blink = gsap.to(cur, { opacity: 0, duration: .01, repeat: 3, yoyo: true, repeatDelay: .13, ease: 'none' });
     let finished = false, run = null; const t0 = performance.now();
     const unlock = () => { o.remove(); document.body.classList.remove('locked'); lenis && lenis.start(); playing = false; removeEventListener('pointerdown', skip); removeEventListener('keydown', skip); ScrollTrigger.refresh(); };
@@ -53,16 +53,19 @@
     // skip only on a deliberate click or key, never on a stray scroll
     function skip(e) { if (performance.now() - t0 < 700) return; if (e.type === 'keydown' && !['Escape', 'Enter', ' '].includes(e.key)) return; run && run.skip(); }
     addEventListener('pointerdown', skip); addEventListener('keydown', skip);
-    run = City.intro(icv, g, end, cur); setTimeout(() => { if (!document.hidden) end(); }, run.end() + 3000); }
+    try { run = City.intro(icv, g, end, cur); } catch (e) { console.error(e); unlock(); heroIn(true); return; }
+    // a slow camera pull-back while the market draws
+    gsap.fromTo(icv, { scale: 1.14, transformOrigin: '50% 45%' }, { scale: 1, duration: 3.2, ease: 'power2.out' });
+    if (!City.ready()) City.load().then(() => { try { run.setCity(City.build(W, H, fsFor(W), heroFade())); } catch (e) { console.error(e); } }).catch(() => { run.setCity({ cells: [], sky: [], R: 1, C: 1 }); });
+    setTimeout(() => { if (!finished && !document.hidden) end(); }, 9500); }
 
   async function boot() {
+    // the intro starts on the first frame; the city map and the font load while the chart draws
+    if (introOn) { if (document.hidden) { const go = () => { if (!document.hidden) { document.removeEventListener('visibilitychange', go); playIntro(); } }; document.addEventListener('visibilitychange', go); } else playIntro(); }
     try { await document.fonts.load('600 12px JB'); } catch { }
     try { await City.load(); } catch { /* the page still works without the city */ }
     if (window.City && G === null) { try { buildCity(); } catch (e) { console.error(e); } }
-    if (!introOn) { heroIn(true); return; }
-    // a tab opened in the background waits until it is looked at
-    if (document.hidden) { const go = () => { if (!document.hidden) { document.removeEventListener('visibilitychange', go); playIntro(); } }; document.addEventListener('visibilitychange', go); return; }
-    playIntro();
+    if (!introOn) heroIn(true);
   }
   // click the logo to watch it again
   $('.logo').addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); playIntro(); }, true);
