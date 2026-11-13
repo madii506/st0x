@@ -35,10 +35,10 @@
 
   // ================================================================ shared state
   const LS = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }, SV = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { } };
-  const S = { fav: new Set(LS('st0x-fav', [])), alerts: LS('st0x-alerts', []), type: 'market', orders: [], board: null, sel: null, tf: '1h', side: 'buy', unit: 'SOL', slip: 100, wallet: null, provider: null, bag: null, quote: null, subs: [], sort: 'liq', q: '' };
-  window.S0 = { S, et, nyse, dur, etLabel, openAt, setSchedule, MKT, HOLNAME, usd, big, pct, cls, num, esc, toast, on: f => S.subs.push(f), select: m => select(m), connect: () => openWallets() };
+  const S = { fav: new Set(LS('st0x-fav', [])), alerts: LS('st0x-alerts', []), type: 'market', pane: 'trades', trades: null, orders: [], board: null, sel: null, tf: '1h', side: 'buy', unit: 'SOL', slip: 100, wallet: null, provider: null, bag: null, quote: null, subs: [], sort: 'liq', q: '' };
+  window.S0 = { S, session: (...a) => session(...a), et, nyse, dur, etLabel, openAt, setSchedule, MKT, HOLNAME, usd, big, pct, cls, num, esc, toast, on: f => S.subs.push(f), select: m => select(m), connect: () => openWallets() };
 
-  async function loadBoard() { try { const b = await getJ(API + '?a=board'); const prev = S.board; S.board = b; paintList(prev); paintBar(); if (!S.sel) select(pickDefault()); else paintSel(); S.subs.forEach(f => { try { f(b); } catch (e) { console.error(e); } }); checkAlerts(); }
+  async function loadBoard() { try { const b = await getJ(API + '?a=board'); const prev = S.board; S.board = b; paintList(prev); paintBar(); if (!S.sel) select(pickDefault()); else paintSel(); S.subs.forEach(f => { try { f(b); } catch (e) { console.error(e); } }); checkAlerts(); if (S.pane === 'info' || S.pane === 'movers') paintPane(); }
     catch (e) { if (!S.board) $('#wlList').innerHTML = `<div class="empty">could not reach the board (${esc(e.message)}). retrying…</div>`; } }
   const pickDefault = () => { const L = S.board.stocks; return (L.find(s => s.sym === 'NVDA') || L[0]).mint; };
   const bySym = t => { if (!S.board) return null; const k = String(t || '').toUpperCase().replace(/^\$/, ''); return S.board.stocks.find(s => s.sym === k || s.tok.toUpperCase() === k || s.sym === k.replace(/X$/, '')) || null; };
@@ -54,7 +54,7 @@
   function paintBar() { const b = S.board; $('#tbSol').textContent = 'sol ' + usd(b.sol, 2); $('#tbCount').textContent = b.count + ' stocks'; }
 
   // ================================================================ selection + chart
-  function select(mint) { if (!mint || !byMint(mint)) return; S.sel = mint; S.quote = null; paintList(); paintSel(); loadCandles(); requote(); clearTimeout(select.dt); select.dt = setTimeout(loadDepth, 500); }
+  function select(mint) { if (!mint || !byMint(mint)) return; S.sel = mint; S.quote = null; S.trades = null; DEP = null; lastTx = new Set(); paintList(); paintSel(); loadCandles(); requote(); paintPane(); loadTrades(); clearTimeout(select.dt); select.dt = setTimeout(loadDepth, 500); }
   function paintSel() { const s = byMint(S.sel); if (!s) return; $('#chIcon').src = s.icon; $('#chSym').textContent = s.tok; $('#chName').textContent = s.name + ' · ' + s.sym;
     $('#chPx').textContent = usd(s.usd); const c = $('#chCh'); c.textContent = pct(s.ch24) + ' 24h'; c.className = cls(s.ch24);
     $('#chMeta').innerHTML = [['liquidity', big(s.liq)], ['24h volume', big(s.vol24)], ['holders', s.holders ? num(s.holders, 0) : '—'], ['share price', s.ref ? usd(s.ref) : '—'], ['gap', `<span class="${cls(s.gap)}">${pct(s.gap)}</span>`]].map(([k, v]) => `<span>${k} <b>${v}</b></span>`).join('');
@@ -170,7 +170,7 @@
     const el = document.createElement('span'); el.className = 'since'; el.innerHTML = `${v.kind === 'closed' ? 'since nyse closed' : 'since the open'} (${etLabel(v.at)}) <b class="${cls(v.ch)}">${pct(v.ch)}</b>`; m.prepend(el); }
 
   // ================================================================ alerts: kept in this browser, checked on every refresh
-  function saveAlerts() { SV('st0x-alerts', S.alerts); }
+  function saveAlerts() { SV('st0x-alerts', S.alerts); if (S.pane === 'alerts' || $('#alN')) paintPane(); }
   function beep() { try { const A = new (window.AudioContext || window.webkitAudioContext)(), o = A.createOscillator(), g = A.createGain(); o.type = 'square'; o.frequency.value = 880; g.gain.value = .04; o.connect(g); g.connect(A.destination); o.start(); o.frequency.setValueAtTime(1320, A.currentTime + .09); o.stop(A.currentTime + .2); } catch { } }
   function addAlert(s, op, px) { const a = { id: Date.now(), mint: s.mint, tok: s.tok, op, px }; S.alerts.push(a); saveAlerts();
     try { if (window.Notification && Notification.permission === 'default') Notification.requestPermission(); } catch { } return a; }
@@ -242,6 +242,38 @@
   async function loadDepth() { const s = byMint(S.sel), el = $('#chDepth'); if (!s || !el) return; const id = ++depthReq; el.innerHTML = '<span>depth: quoting…</span>';
     const sizes = [100, 1000, 10000, 50000]; const res = await Promise.all(sizes.map(u => getJ(`${JUP}/swap/v1/quote?inputMint=${USDC}&outputMint=${s.mint}&amount=${u * 1e6}&slippageBps=300&restrictIntermediateTokens=true`).then(q => +q.priceImpactPct * 100).catch(() => null)));
     if (id !== depthReq) return; el.innerHTML = '<span>buy impact now:</span>' + sizes.map((u, i) => `<span>$${u >= 1000 ? u / 1000 + 'k' : u} <b class="${res[i] != null && res[i] > 1 ? 'd' : ''}">${res[i] == null ? 'no route' : res[i] < .01 ? '<0.01%' : res[i].toFixed(2) + '%'}</b></span>`).join('') + `<span>${nyse().open ? '' : 'nyse closed: thinner books'}</span>`; }
+
+
+  // ================================================================ bottom panes: trades · info · depth · movers · alerts
+  let trReq = 0, lastTx = new Set();
+  async function loadTrades() { const s = byMint(S.sel); if (!s) return; const id = ++trReq; try { const j = await getJ(`${API}?a=trades&mint=${s.mint}`); if (id !== trReq) return; S.trades = j; if (S.pane === 'trades') paintPane(); } catch (e) { if (id === trReq && S.pane === 'trades') $('#btPane').innerHTML = `<div class="empty">trades unavailable: ${esc(e.message)}</div>`; } }
+  function tradesHtml() { const s = byMint(S.sel), j = S.trades; if (!j || j.mint !== s.mint) return '<div class="empty">loading trades…</div>'; if (!j.rows.length) return '<div class="empty">no recent trades in this pool.</div>';
+    const fresh = new Set(j.rows.map(r => r.tx)), html = `<div class="tr-h"><span>time (et)</span><span>side</span><span>shares</span><span>price</span><span>value</span><span>tx</span></div>` + j.rows.map(r => { const closed = !openAt(r.t), isNew = lastTx.size && !lastTx.has(r.tx);
+      return `<div class="tr${isNew ? ' new' : ''}"><span>${etLabel(r.t).replace(' et', '')}${closed ? '<i class="cl">closed</i>' : ''}</span><span class="sd ${r.side === 'buy' ? 'b' : 's'}">${r.side}</span><span>${num(r.amount, 5)}</span><span>${usd(r.price)}</span><span>${usd(r.usd, 2)}</span><span>${r.tx ? `<a href="https://solscan.io/tx/${esc(r.tx)}" target="_blank" rel="noopener">${esc(r.tx.slice(0, 6))}…</a>` : ''}</span></div>`; }).join('');
+    lastTx = fresh; return html; }
+  function infoHtml() { const s = byMint(S.sel); if (!s) return ''; const sh = m => m.slice(0, 6) + '…' + m.slice(-6);
+    const rows = [['token', `${esc(s.tok)} · ${esc(s.name)}`], ['underlying', `${esc(s.sym)} · ${s.kind === 'fund' ? 'fund / etf' : 'stock'}`], ['mint', `<span>${sh(s.mint)}</span><button data-copy="${s.mint}">[ copy ]</button>`],
+      ['on-chain price', usd(s.usd)], ['share price', s.ref ? `${usd(s.ref)} · ${s.refAt ? etLabel(Date.parse(s.refAt)) : ''}` : '—'], ['gap', `<span class="${cls(s.gap)}">${pct(s.gap)}</span>`], ['24h move', `<span class="${cls(s.ch24)}">${pct(s.ch24)}</span>`],
+      ['liquidity', big(s.liq)], ['24h volume', big(s.vol24)], ['holders', s.holders ? num(s.holders, 0) : '—'], ['24h traders', s.traders24 ? num(s.traders24, 0) : '—'], ['decimals', s.decimals],
+      ['dividend multiplier', s.mult ? s.mult.toFixed(5) + ' (reinvested)' : '—'], ['token program', 'Token-2022'],
+      ['links', `<a href="https://solscan.io/token/${s.mint}" target="_blank" rel="noopener">solscan</a> · <a href="https://jup.ag/tokens/${s.mint}" target="_blank" rel="noopener">jupiter</a> · <a href="https://dexscreener.com/solana/${s.mint}" target="_blank" rel="noopener">dexscreener</a>`]];
+    return `<dl class="inf">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>`; }
+  let DEP = null, dpReq = 0;
+  async function loadDepthFull() { const s = byMint(S.sel); if (!s) return; const id = ++dpReq, sizes = [100, 500, 1000, 5000, 10000, 50000];
+    const q = (i, o, a) => getJ(`${JUP}/swap/v1/quote?inputMint=${i}&outputMint=${o}&amount=${a}&slippageBps=300&restrictIntermediateTokens=true`).then(r => ({ imp: +r.priceImpactPct * 100, out: +r.outAmount })).catch(() => null);
+    const dec = s.decimals ?? 8, [buy, sell] = await Promise.all([Promise.all(sizes.map(u => q(USDC, s.mint, u * 1e6))), Promise.all(sizes.map(u => s.usd ? q(s.mint, USDC, Math.floor(u / s.usd * 10 ** dec)) : null))]);
+    if (id !== dpReq) return; DEP = { mint: s.mint, sizes, buy, sell }; if (S.pane === 'depth') paintPane(); }
+  function depthHtml() { const s = byMint(S.sel); if (!DEP || DEP.mint !== s.mint) { loadDepthFull(); return '<div class="empty">asking jupiter for six sizes each way…</div>'; }
+    const col = (arr, side) => DEP.sizes.map((u, i) => { const r = arr[i], imp = r ? r.imp : null, px = r ? (side === 'buy' ? u / (r.out / 10 ** (s.decimals ?? 8)) : (r.out / 1e6) / (u / s.usd)) : null;
+      return `<div class="row"><span>$${u >= 1000 ? u / 1000 + 'k' : u}</span><span>${imp == null ? 'no route' : (imp < .01 ? '<0.01%' : imp.toFixed(2) + '%')} · ${px ? usd(px) : '—'}</span><span class="bar"><i class="${side === 'sell' ? 'r' : ''}" style="width:${imp == null ? 0 : Math.min(100, imp * 20)}%"></i></span></div>`; }).join('');
+    return `<div class="dp"><div><h4>buy ${esc(s.tok)} with USDC · impact · avg price</h4>${col(DEP.buy, 'buy')}</div><div><h4>sell ${esc(s.tok)} for USDC · impact · avg price</h4>${col(DEP.sell, 'sell')}</div></div>`; }
+  function moversHtml() { const L = S.board.stocks.filter(s => s.ch24 != null), up = [...L].sort((a, b) => b.ch24 - a.ch24).slice(0, 6), dn = [...L].sort((a, b) => a.ch24 - b.ch24).slice(0, 6), gp = S.board.stocks.filter(s => s.gap != null).sort((a, b) => Math.abs(b.gap) - Math.abs(a.gap)).slice(0, 6);
+    const li = (s, v) => `<button class="mvr" data-m="${s.mint}"><img src="${esc(s.icon)}" alt="">${'<b>' + esc(s.tok) + '</b>'}<span class="${cls(v)}">${pct(v)}</span></button>`;
+    return `<div class="mv"><div><h4>top gainers 24h</h4>${up.map(s => li(s, s.ch24)).join('')}</div><div><h4>top losers 24h</h4>${dn.map(s => li(s, s.ch24)).join('')}</div><div><h4>biggest gap vs share</h4>${gp.map(s => li(s, s.gap)).join('')}</div></div>`; }
+  function alertsHtml() { const s = byMint(S.sel); return `<div class="al"><div class="al-f"><span>alert me when <b>${esc(s.tok)}</b> is</span><select id="alOp"><option value=">">above</option><option value="<">below</option></select><input id="alPx" inputmode="decimal" value="${s.usd ? (+(s.usd * 1.02).toPrecision(5)) : ''}"><button id="alAdd">[ add ]</button><span class="dim" style="color:var(--mute)">fires while this page is open, with a sound and a notification.</span></div>
+    ${S.alerts.length ? S.alerts.map((a, i) => { const t = byMint(a.mint); return `<div class="alr"><span>${esc(a.tok)} ${a.op === '>' ? 'above' : 'below'} <b>${usd(a.px)}</b> · now ${t ? usd(t.usd) : '—'}</span><button data-al="${i}">[ remove ]</button></div>`; }).join('') : '<div class="empty" style="padding:6px 0">no alerts yet.</div>'}</div>`; }
+  function paintPane() { const p = $('#btPane'); if (!p || !S.board || !byMint(S.sel)) return; $$('#btTabs button').forEach(b => b.classList.toggle('on', b.dataset.p === S.pane)); $('#alN').textContent = S.alerts.length ? S.alerts.length : '';
+    p.innerHTML = S.pane === 'trades' ? tradesHtml() : S.pane === 'info' ? infoHtml() : S.pane === 'depth' ? depthHtml() : S.pane === 'movers' ? moversHtml() : alertsHtml(); }
 
   // ================================================================ console
   const hist = []; let hi = 0, pending = null;
@@ -319,6 +351,10 @@
     $('#navWallet').addEventListener('click', () => S.wallet ? disconnect() : openWallets());
     $('#wmList').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (b) connectWith(b.dataset.w); });
     $('#wmX').addEventListener('click', () => $('#wm').hidden = true); $('#wm').addEventListener('click', e => { if (e.target.id === 'wm') $('#wm').hidden = true; });
+    $('#btTabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.pane = b.dataset.p; paintPane(); if (S.pane === 'trades') loadTrades(); });
+    $('#btPane').addEventListener('click', async e => { const m = e.target.closest('[data-m]'); if (m) { select(m.dataset.m); return; } const c = e.target.closest('[data-copy]'); if (c) { try { await navigator.clipboard.writeText(c.dataset.copy); toast('mint copied'); } catch { toast(c.dataset.copy); } return; }
+      const r = e.target.closest('[data-al]'); if (r) { S.alerts.splice(+r.dataset.al, 1); saveAlerts(); return; }
+      if (e.target.id === 'alAdd') { const s = byMint(S.sel), px = parseFloat($('#alPx').value); if (!(px > 0)) { toast('enter a price'); return; } addAlert(s, $('#alOp').value, px); log(`alert set: ${s.tok} ${$('#alOp').value} ${usd(px)}`, 'ok'); paintPane(); } });
     $('#chStar').addEventListener('click', () => { const m = S.sel; S.fav.has(m) ? S.fav.delete(m) : S.fav.add(m); SV('st0x-fav', [...S.fav]); paintList(); paintSel(); });
     $('#chAlert').addEventListener('click', () => { const s = byMint(S.sel); if (!s) return; const t = +(s.usd * 1.02).toPrecision(4); $('#conIn').value = `alert ${s.sym.toLowerCase()} > ${t}`; $('#conIn').focus({ preventScroll: true }); log('edit the price and press enter to set the alert.', 'dim'); });
     $('#chShare').addEventListener('click', shareCard);
@@ -334,6 +370,6 @@
     // silent reconnect for wallets the visitor already trusted
     setTimeout(async () => { const p = window.phantom && window.phantom.solana; if (p && p.connect) { try { const r = await p.connect({ onlyIfTrusted: true }); if (r && r.publicKey) onConnect(r.publicKey.toString(), p); } catch { } } }, 900);
   }
-  function start() { wire(); loadBoard(); setInterval(() => { if (!document.hidden) loadBoard(); }, 20000); setInterval(() => { if (!document.hidden && S.sel) loadCandles(); }, 90000); setInterval(() => { if (S.quote && !S.quote.err && Date.now() - S.quote.at > 15000) requote(); }, 5000); setInterval(() => { if (!document.hidden) { loadDepth(); loadOrders(); } }, 60000); }
+  function start() { wire(); loadBoard(); setInterval(() => { if (!document.hidden) loadBoard(); }, 20000); setInterval(() => { if (!document.hidden && S.sel) loadCandles(); }, 90000); setInterval(() => { if (S.quote && !S.quote.err && Date.now() - S.quote.at > 15000) requote(); }, 5000); setInterval(() => { if (!document.hidden) { loadDepth(); loadOrders(); } }, 60000); setInterval(() => { if (!document.hidden && S.pane === 'trades') loadTrades(); }, 20000); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();

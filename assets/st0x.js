@@ -3,13 +3,14 @@
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const X = window.S0, { S, esc, usd, big, pct, cls, num } = X;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let introOn = false; try { introOn = !sessionStorage.getItem('st0x-intro') && !reduce; } catch { introOn = !reduce; }
+  // the intro plays on every visit (add ?nointro to the link to skip it)
+  const introOn = !/[?&]nointro\b/.test(location.search);
   if (!introOn) document.documentElement.classList.add('nointro'); else document.body.classList.add('locked');
   gsap.registerPlugin(ScrollTrigger);
 
   // ---------------------------------------------------------------- smooth scroll
   let lenis = null;
-  if (!reduce && window.Lenis) { lenis = new Lenis({ lerp: .1, wheelMultiplier: 1 }); lenis.on('scroll', ScrollTrigger.update); gsap.ticker.add(t => lenis.raf(t * 1000)); gsap.ticker.lagSmoothing(0); if (introOn) lenis.stop(); }
+  if (window.Lenis) { lenis = new Lenis({ lerp: reduce ? .2 : .1, wheelMultiplier: 1 }); lenis.on('scroll', ScrollTrigger.update); gsap.ticker.add(t => lenis.raf(t * 1000)); gsap.ticker.lagSmoothing(0); if (introOn) lenis.stop(); }
   document.addEventListener('click', e => { const a = e.target.closest('a[href^="#"]'); if (!a) return; const id = a.getAttribute('href'); const t = id === '#top' ? 0 : $(id); if (t === null) return; e.preventDefault(); lenis ? lenis.scrollTo(t, { offset: id === '#top' ? 0 : -64, duration: 1.4 }) : (t === 0 ? scrollTo(0, 0) : t.scrollIntoView({ behavior: 'smooth' })); });
   const nav = $('#nav'), prog = $('#prog'); const onScroll = () => { nav.classList.toggle('solid', scrollY > 40); const m = document.documentElement.scrollHeight - innerHeight; prog.style.setProperty('--p', m > 0 ? (scrollY / m).toFixed(4) : 0); }; addEventListener('scroll', onScroll, { passive: true }); onScroll();
 
@@ -31,26 +32,40 @@
 
   function heroIn(fast) { gsap.fromTo(['#heroStatus .st', '.hero-in .cta .btn', '.scrollhint'], { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: .8, ease: 'power3.out', stagger: .08, delay: fast ? .25 : .35 }); }
 
+  // the intro: a cursor draws a market, the bell rings, the line keeps climbing in green, it falls into the street, the city builds itself
+  let playing = false;
+  function overlay() { let o = $('#intro'); if (!o) { o = document.createElement('div'); o.id = 'intro'; o.setAttribute('aria-hidden', 'true'); o.innerHTML = '<canvas id="introCv"></canvas><i id="introCur"></i>'; document.body.prepend(o); } return o; }
+  function playIntro() { if (playing || !window.City) return; playing = true; document.documentElement.classList.remove('nointro'); const o = overlay(); document.body.classList.add('locked'); lenis && lenis.stop(); scrollTo(0, 0);
+    const icv = $('#introCv'), cur = $('#introCur'); gsap.set([o, icv, cur], { clearProps: 'all' });
+    const g = City.build(innerWidth, hero.clientHeight || innerHeight, fsFor(innerWidth), heroFade());
+    const blink = gsap.to(cur, { opacity: 0, duration: .01, repeat: 3, yoyo: true, repeatDelay: .13, ease: 'none' });
+    let finished = false, run = null; const t0 = performance.now();
+    const unlock = () => { o.remove(); document.body.classList.remove('locked'); lenis && lenis.start(); playing = false; removeEventListener('pointerdown', skip); removeEventListener('keydown', skip); ScrollTrigger.refresh(); };
+    const end = () => { if (finished) return; finished = true; blink.kill(); gsap.set(cur, { opacity: 1 });
+      if (document.hidden) { unlock(); heroIn(true); return; }
+      const tgt = $('#heroStatus .ours i').getBoundingClientRect(), now = cur.getBoundingClientRect();
+      // the cursor flies down into the 'st0x open' light
+      gsap.timeline({ onComplete: unlock })
+        .to(icv, { filter: 'blur(1.1px)', duration: .55, ease: 'power2.inOut' }, 0)
+        .to(cur, { x: tgt.left + tgt.width / 2 - (now.left + now.width / 2), y: tgt.top + tgt.height / 2 - (now.top + now.height / 2), scaleX: tgt.width / now.width, scaleY: tgt.height / now.height, duration: .75, ease: 'expo.inOut' }, .05)
+        .add(() => heroIn(false), .45)
+        .to(o, { backgroundColor: 'rgba(255,255,255,0)', duration: .5 }, .35).to(icv, { opacity: 0, duration: .45 }, .55).to(cur, { opacity: 0, duration: .15 }, .8); };
+    // skip only on a deliberate click or key, never on a stray scroll
+    function skip(e) { if (performance.now() - t0 < 700) return; if (e.type === 'keydown' && !['Escape', 'Enter', ' '].includes(e.key)) return; run && run.skip(); }
+    addEventListener('pointerdown', skip); addEventListener('keydown', skip);
+    run = City.intro(icv, g, end, cur); setTimeout(() => { if (!document.hidden) end(); }, run.end() + 3000); }
+
   async function boot() {
     try { await document.fonts.load('600 12px JB'); } catch { }
     try { await City.load(); } catch { /* the page still works without the city */ }
     if (window.City && G === null) { try { buildCity(); } catch (e) { console.error(e); } }
     if (!introOn) { heroIn(true); return; }
-    const icv = $('#introCv'), cur = $('#introCur'), g = City.build(innerWidth, hero.clientHeight || innerHeight, fsFor(innerWidth), heroFade());
-    let blink = gsap.to(cur, { opacity: 0, duration: .01, repeat: 3, yoyo: true, repeatDelay: .13, ease: 'none' });
-    let finished = false; const end = () => { if (finished) return; finished = true; try { sessionStorage.setItem('st0x-intro', '1'); } catch { }
-      if (document.hidden) { const el = $('#intro'); if (el) el.remove(); document.body.classList.remove('locked'); lenis && lenis.start(); heroIn(true); ScrollTrigger.refresh(); return; }
-      blink.kill(); gsap.set(cur, { opacity: 1 }); const tgt = $('#heroStatus .ours i').getBoundingClientRect(), now = cur.getBoundingClientRect();
-      // the cursor flies down into the 'st0x open' light
-      const tl = gsap.timeline({ onComplete: () => { $('#intro').remove(); document.body.classList.remove('locked'); lenis && lenis.start(); ScrollTrigger.refresh(); } });
-      tl.to(icv, { filter: 'blur(1.1px)', duration: .55, ease: 'power2.inOut' }, 0)
-        .to(cur, { x: tgt.left + tgt.width / 2 - (now.left + now.width / 2), y: tgt.top + tgt.height / 2 - (now.top + now.height / 2), scaleX: tgt.width / now.width, scaleY: tgt.height / now.height, duration: .75, ease: 'expo.inOut' }, .05)
-        .add(() => heroIn(false), .45)
-        .to('#intro', { backgroundColor: 'rgba(255,255,255,0)', duration: .5 }, .35).to(icv, { opacity: 0, duration: .45 }, .55).to(cur, { opacity: 0, duration: .15 }, .8); };
-    if (document.hidden) { end(); return; }
-    const run = City.intro(icv, g, end, cur); setTimeout(end, run.end() + 2500);
-    const skip = () => { run.skip(); }; ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(ev => addEventListener(ev, skip, { once: true, passive: true }));
+    // a tab opened in the background waits until it is looked at
+    if (document.hidden) { const go = () => { if (!document.hidden) { document.removeEventListener('visibilitychange', go); playIntro(); } }; document.addEventListener('visibilitychange', go); return; }
+    playIntro();
   }
+  // click the logo to watch it again
+  $('.logo').addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); playIntro(); }, true);
 
   // ---------------------------------------------------------------- live NYSE status (hero, nav, terminal bar)
   function tick() { const n = X.nyse(), left = n.next ? X.dur(n.next - Date.now()) : '—';
@@ -62,7 +77,7 @@
   const fmt = {}; CLK.forEach(([, z]) => fmt[z] = new Intl.DateTimeFormat('en-GB', { timeZone: z, hour: '2-digit', minute: '2-digit', weekday: 'short' })); const fmtMe = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', weekday: 'short' });
   function paintClocks(n) { const el = $('#clocks'); if (!el) return; const d = new Date();
     el.innerHTML = CLK.map(([c, z], i) => `<span><i class="${i === 0 && n.open ? 'on' : ''}"></i>${c} <b>${fmt[z].format(d).toLowerCase()}</b></span>`).join('') + `<span><i class="on"></i>you <b>${fmtMe.format(d).toLowerCase()}</b> · st0x open</span>`; }
-  async function loadHours() { try { const r = await fetch('/api/x?a=hours'); const j = await r.json(); if (j.schedule) X.setSchedule(j.schedule); } catch { } tick(); paintHol(); }
+  async function loadHours() { try { const r = await fetch('/api/x?a=hours'); const j = await r.json(); if (j.schedule) X.setSchedule(j.schedule); } catch { } tick(); paintHol(); paintNext(); }
 
   // ---------------------------------------------------------------- the week: 168 cells
   const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], cells = [];
@@ -78,11 +93,16 @@
     const line = $('#wkLine'), phase = p > .48 ? 2 : 1; if (line.dataset.p != phase) { line.dataset.p = phase; line.innerHTML = phase === 2 ? 'st0x trades <b class="green">all 168</b>. weekends, nights, holidays.' : 'wall street trades <b class="grey">32.5</b> of them.'; } }
   function paintNow() { if (!cells.length) return; const p = X.et(Date.now()), d = (p.wd + 6) % 7, h = p.h; cells.forEach(c => c.el.classList.toggle('now', c.d === d && c.h === h));
     $('#wkNow').textContent = `${DAYS[d]} ${String(p.h).padStart(2, '0')}:${String(p.mi).padStart(2, '0')} et`; const n = X.nyse(); $('#wkNowS').textContent = n.open ? 'nyse open, st0x open' : 'nyse closed, st0x open'; }
+  function paintNext() { const el = $('#wkNext'); if (!el) return; const out = [], MON = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+    for (let i = 1; i < 380 && out.length < 6; i++) { const p = X.et(Date.now() + i * 864e5); if (p.wd === 0 || p.wd === 6) continue; const s = X.session(p.y, p.m, p.d, p.wd); if (s.closed || s.early) out.push({ p, early: !s.closed && s.early, name: X.HOLNAME[s.k] || 'market holiday' }); }
+    el.innerHTML = out.length ? '<span style="box-shadow:none;padding-left:0;color:var(--mute)">nyse shut or short next:</span>' + out.map(o => `<span class="${o.early ? 'e' : ''}"><b>${o.early ? '1pm' : 'shut'}</b>${DAYS[(o.p.wd + 6) % 7]} ${MON[o.p.m - 1]} ${o.p.d} · ${o.name}</span>`).join('') : ''; }
   function paintHol() { const n = X.nyse(); if (!n.hol) return; const p = n.hol.p, name = X.HOLNAME[n.hol.k] || 'market holiday', MON = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
     $('#wkHol').textContent = `next time nyse ${n.hol.early ? 'closes early' : 'stays shut on a weekday'}: ${DAYS[(p.wd + 6) % 7]} ${MON[p.m - 1]} ${p.d}, ${name}. st0x won't notice.`; }
 
   // ---------------------------------------------------------------- tape, gap table, numbers (all from the live board)
   function paintTape(b) { const L = b.stocks.slice(0, 30); const one = L.map(s => `<span class="tp"><img src="${esc(s.icon)}" alt="" loading="lazy"><b>${esc(s.tok)}</b><em>${usd(s.usd)}</em><span class="${cls(s.ch24)}">${s.ch24 >= 0 ? '▲' : '▼'} ${pct(s.ch24)}</span></span>`).join(''); $('#tapeRun').innerHTML = one + one; }
+  function paintGapSum(b) { const el = $('#gapSum'); if (!el) return; const L = b.stocks.filter(s => s.gap != null); if (!L.length) return; const avg = L.reduce((a, s) => a + s.gap, 0) / L.length, hi = L.reduce((a, s) => s.gap > a.gap ? s : a), lo = L.reduce((a, s) => s.gap < a.gap ? s : a), above = L.filter(s => s.gap > 0).length;
+    el.innerHTML = `<div><b class="${cls(avg)}">${pct(avg)}</b><span>average gap, ${L.length} xStocks</span></div><div><b class="u"><img src="${esc(hi.icon)}" alt="">${esc(hi.tok)} ${pct(hi.gap)}</b><span>richest vs its share</span></div><div><b class="d"><img src="${esc(lo.icon)}" alt="">${esc(lo.tok)} ${pct(lo.gap)}</b><span>cheapest vs its share</span></div><div><b>${above}/${L.length}</b><span>trading above the share</span></div>`; }
   function paintGap(b) { const n = X.nyse(); $('#gapLede').innerHTML = n.open ? 'nyse is open, so tokens and shares move together. come back after 4pm et and watch them drift apart.' : 'nyse is closed. the share price is frozen at its last print. the tokens keep trading. this is the gap, live.';
     const L = b.stocks.filter(s => s.gap != null).slice(0, 14); if (!L.length) { $('#gapTbl').innerHTML = '<div class="empty">no reference prices right now.</div>'; return; }
     const mx = Math.max(1, ...L.map(s => Math.abs(s.gap)));
@@ -152,7 +172,7 @@
     // headings decode when they arrive
     $$('h2.scr').forEach(h => { h.style.visibility = 'hidden'; ScrollTrigger.create({ trigger: h, start: 'top 86%', once: true, onEnter: () => decode(h, 700) }); });
     // reveal blocks
-    const rv = ['.built', '.clocks', '.hm-ctl', '.lede', '.term', '.gap-tbl', '.fnode', '.farrow', '.num', '.rk', '.faq details', '.tok', '.wk-legend', '.wk-hol', '#gap .fine'];
+    const rv = ['.stp', '.gap-sum', '.wk-next', '.built', '.clocks', '.hm-ctl', '.lede', '.term', '.gap-tbl', '.fnode', '.farrow', '.num', '.rk', '.faq details', '.tok', '.wk-legend', '.wk-hol', '#gap .fine'];
     rv.forEach(s => $$(s).forEach(el => el.classList.add('rv')));
     ScrollTrigger.batch('.rv', { start: 'top 90%', once: true, onEnter: els => gsap.to(els, { opacity: 1, y: 0, duration: .9, ease: 'power3.out', stagger: .07, overwrite: true }) });
     // numbers count up
@@ -168,7 +188,7 @@
 
   // ---------------------------------------------------------------- go
   buildWeek(); paintWeek(0); loadHours(); setInterval(tick, 1000); setInterval(loadHours, 10 * 60e3);
-  X.on(b => { paintTape(b); paintGap(b); paintNums(b); paintHeat(b); paintNames(b); paintBuilt(b); $$('[data-live=count]').forEach(e => e.textContent = b.count); });
+  X.on(b => { paintTape(b); paintGap(b); paintGapSum(b); paintNums(b); paintHeat(b); paintNames(b); paintBuilt(b); $$('[data-live=count]').forEach(e => e.textContent = b.count); });
   $('#hmCtl').addEventListener('click', e => { const bt = e.target.closest('button'); if (!bt) return; hmMode = bt.dataset.c; $$('#hmCtl button').forEach(x => x.classList.toggle('on', x === bt)); paintHeat(S.board); });
   $('#nmGrid').addEventListener('click', e => { const t = e.target.closest('[data-m]'); if (!t) return; X.select(t.dataset.m); const tt = $('#terminal'); lenis ? lenis.scrollTo(tt, { offset: -64 }) : tt.scrollIntoView({ behavior: 'smooth' }); });
   $('#hm').addEventListener('click', e => { const t = e.target.closest('[data-m]'); if (!t) return; X.select(t.dataset.m); const tt = $('#terminal'); lenis ? lenis.scrollTo(tt, { offset: -64 }) : tt.scrollIntoView({ behavior: 'smooth' }); });
