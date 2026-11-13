@@ -133,7 +133,7 @@
     // the overlay only paints the canvas (the page behind is white); the app, clipped to nothing, opens out of the cursor at the end
     o.style.background = 'transparent';
     try { run = Intro.play({ canvas: cv, cursor: cur, app, onDone: fin }); } catch (e) { console.error(e); app.style.clipPath = ''; app.style.transform = ''; fin(); return; }
-    setTimeout(() => { if (playing && !document.hidden) run.finish(); }, 14000); }
+    setTimeout(() => { if (playing && !document.hidden) run.finish(); }, 18000); }
   $('.logo').addEventListener('click', e => { e.preventDefault(); playIntro(); });
 
   // ---------------------------------------------------------------- go

@@ -10,15 +10,15 @@
 
   // W,H in css px; fs = font size; fade(x,y) in css px -> 0..1 keeps the headline clear
   function bare(W, H, fs) { const cw = fs * .6, ch = fs * 1.18; return { cells: [], sky: [], C: Math.ceil(W / cw), R: Math.ceil(H / ch), cw, ch, fs, W, H }; }
-  function build(W, H, fs, fade) {
+  function build(W, H, fs, fade, opt = {}) {   // opt: { s: scale, wrap: repeat the skyline sideways, roll: image px shift }
     const cw = fs * .6, ch = fs * 1.18, C = Math.ceil(W / cw), R = Math.ceil(H / ch), im = IMG;
-    const s = Math.max(W / im.w, (H * .62) / im.h), w = im.w * s, h = im.h * s, x0 = (W - w) / 2, ground = H * .955, y0 = ground - .885 * h;
+    const s = opt.s || Math.max(W / im.w, (H * .62) / im.h), w = im.w * s, h = im.h * s, x0 = opt.wrap ? 0 : (W - w) / 2, ground = H * .955, y0 = ground - .885 * h, roll = Math.round(opt.roll || 0);
     const ID = new Int32Array(C * R), THIN = new Uint8Array(C * R), DEP = new Map(), BX = new Map(), BY = new Map();
     const N = 4;
     for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
       const cnt = new Map(); let best = 0, bid = 0, xs = new Map();
       for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
-        const px = Math.floor(((c + (i + .5) / N) * cw - x0) / s), py = Math.floor(((r + (j + .5) / N) * ch - y0) / s);
+        let px = Math.floor(((c + (i + .5) / N) * cw - x0) / s); const py = Math.floor(((r + (j + .5) / N) * ch - y0) / s); if (opt.wrap) px = (((px + roll) % im.w) + im.w) % im.w;
         if (px < 0 || py < 0 || px >= im.w || py >= im.h) continue; const k = (py * im.w + px) * 4; if (im.d[k + 3] < 200) continue;
         const id = im.d[k] + im.d[k + 1] * 256; const v = (cnt.get(id) || 0) + 1; cnt.set(id, v); DEP.set(id, im.d[k + 2]); if (!xs.has(id)) xs.set(id, new Set()); xs.get(id).add(i);
         if (v > best) { best = v; bid = id; } }

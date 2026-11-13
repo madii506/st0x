@@ -1,52 +1,79 @@
-/* st0x intro: one white ASCII world (~9s), drawn on the same character grid as the st0x logo (the ASCII laptop).
-   a green cursor blinks on the floor, draws the floor line, and climbs while the laptop decodes itself row by row.
-   the screen boots (st0x · 24/7) and opens a login box. someone in a green hoodie walks in, turns, sits down
-   cross-legged in front of it and types. the box goes green, a fist goes up, the screen sweeps into the logo's chart,
-   the real terminal shows through the screen, and the camera dives into it. */
+/* st0x intro: one white ASCII world, nothing but characters (~11s).
+   act 1, the street: an ASCII skyline decodes from the ground up. at the bell every green window goes dark, wall street closes.
+   then st0x lights every window back up, green, from one window outward, and the camera flies into that window.
+   act 2, the desk: the cursor draws the floor and climbs while the st0x logo (the ASCII laptop) decodes itself row by row.
+   the screen boots, a login box opens, someone in a green hoodie walks in, sits down cross-legged and types.
+   the box goes green, a fist goes up, the screen sweeps into the logo's chart, the real terminal shows through,
+   and the camera dives into it. */
 (() => {
   const LAP = {"C":74,"R":25,"ground":23,"rows":["         -************++++++++++++++**++++++++++++++++++++++++++.         ","         =##                                                  ##.         ","         =#%                                                  ##.         ","         =#%                                                  ##.         ","         =#%                                                  ##.         ","         =#%                                                  ##.         ","         =#%                                                  ##.         ","         =#%                                                  ##.         ","         =#%                                                  ##.         ","         =#%                                                  ##.         ","         =#%                                                  ##.         ","         =#%                                                  ##.         ","         =#%                                                  ##.         ","         =#                                                   %#.         ","         =#                                                   %#.         ","         =#                                                   %#.         ","         =#                                                   %#:         ","         =######################################################:         ","         -+++%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#+++.         ","        :---#%%%%%%%%%%%%%%%%%%%%%%%##%##%%%%%%%%%%%%%%%%%%%%*---.        ","   ...:-=--*%%%%%%%%##%##%###################################%+--=::..    ","..::::-==================-------::::::::::-------==================-::::..","...::-===================-------:::::::::--------===================-::...","    :===========================++++++++++===========================     ","     .....::::::::::::::::----------------------:::::::::::::::.....      "],"cols":["000000000kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk000000000","000000000kkksssssssssssssssssssssssssssssssssssssssssssssssssskkk000000000","000000000kkksssssssssssssssssssssssssssssssssssssssssssssssssskkk000000000","000000000kkksssssssssssssssssssssssssssssssssssssssssssssssssskkk000000000","000000000kkksssssssssssssssssssssssssssssssssssssssssssssssssskkk000000000","000000000kkksssssssssssssssssssssssssssssssssssssssssssssssssskkk000000000","000000000kkksssssssssssssssssssssssssssssssssssssssssssssssssskkk000000000","000000000kkksssssssssssssssssssssssssssssssssssssssssssssssssskkk000000000","000000000kkksssssssssssssssssssssssssssssssssssssssssssssssssskkk000000000","000000000kkksssssssssssssssssssssssssssssssssssssssssssssssssskkk000000000","000000000kkksssssssssssssssssssssssssssssssssssssssssssssssssskkk000000000","000000000kkksssssssssssssssssssssssssssssssssssssssssssssssssskkk000000000","000000000kkksssssssssssssssssssssssssssssssssssssssssssssssssskkk000000000","000000000kkssssssssssssssssssssssssssssssssssssssssssssssssssskkk000000000","000000000kkssssssssssssssssssssssssssssssssssssssssssssssssssskkk000000000","000000000kkssssssssssssssssssssssssssssssssssssssssssssssssssskkk000000000","000000000kkssssssssssssssssssssssssssssssssssssssssssssssssssskkk000000000","000000000kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk000000000","000000000kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk000000000","00000000kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk00000000","000kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk0000","kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk","kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk","0000kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk00000","00000kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk000000"],"alph":["00000000067777777777777777777777777777777777777777777777777777775000000000","00000000068800000000000000000000000000000000000000000000000000885000000000","00000000068800000000000000000000000000000000000000000000000000885000000000","00000000068800000000000000000000000000000000000000000000000000885000000000","00000000068800000000000000000000000000000000000000000000000000885000000000","00000000068800000000000000000000000000000000000000000000000000885000000000","00000000068800000000000000000000000000000000000000000000000000885000000000","00000000068800000000000000000000000000000000000000000000000000885000000000","00000000068800000000000000000000000000000000000000000000000000885000000000","00000000068800000000000000000000000000000000000000000000000000885000000000","00000000068800000000000000000000000000000000000000000000000000885000000000","00000000068800000000000000000000000000000000000000000000000000885000000000","00000000068800000000000000000000000000000000000000000000000000885000000000","00000000068000000000000000000000000000000000000000000000000000885000000000","00000000068000000000000000000000000000000000000000000000000000885000000000","00000000068000000000000000000000000000000000000000000000000000885000000000","00000000078000000000000000000000000000000000000000000000000000885000000000","00000000078888888888888888888888888888888888888888888888888888885000000000","00000000067778999999989988988888888888888888888888988988888887775000000000","00000000666689999999889889888888888888888888888888888898898897666500000000","00055556666788888888888888888888888888888888888888888888888888766665550000","55556667777777777777777776666666666666666666666667777777777777777776665555","55555677777777777777777766666666666555566666666667777777777777777777655555","00005766666666666666666666666667777777777766666666666666666666666666700000","00000555555555555566666666666666666666666666666666666666555555555555000000"],"scr":[1,16,11,61]};
-  const INK = '#0d0f0e', INK2 = '#59615d', DIM = '#a3aaa6', G = '#12a150', G2 = '#0c7a3b', RED = '#dc2a2a', GROUND = '#c3c9c6';
+  const INK = '#0d0f0e', INK2 = '#59615d', DIM = '#a3aaa6', G = '#12a150', G2 = '#0c7a3b', RED = '#dc2a2a', GROUND = '#b9c0bc', STREAK = '#cdd3d0';
   const TAU = Math.PI * 2, clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v)), lerp = (a, b, t) => a + (b - a) * t, seg = (t, a, b) => clamp((t - a) / (b - a));
-  const io = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, oc = t => 1 - Math.pow(1 - t, 3);
+  const io = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, oc = t => 1 - Math.pow(1 - t, 3), ic = t => t * t * t;
   const ob = t => { const c = 1.5, u = t - 1; return 1 + (c + 1) * u * u * u + c * u * u; };
   const walkEase = s => { const a = .16, d = .22, v = 1 / (1 - a / 2 - d / 2); return s < a ? v * s * s / (2 * a) : s > 1 - d ? 1 - v * (1 - s) * (1 - s) / (2 * d) : v * (s - a / 2); };
   const hash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
   const RAMP = ' .:-=+*#%@', NOISE = '01<>/\\|=+*#%$x';
-  const GROW = LAP.ground + 1;   // the floor line's row (relative to the laptop's top-left cell)
+  const nz = (a, b, t) => NOISE[Math.floor(hash(a, b + Math.floor(t / 42) * 7) * NOISE.length)];
+  const GROW = LAP.ground + 1;   // the floor's row, relative to the laptop's top-left cell
 
-  // ---------------- the logo's screen (same as the pfp): header, candles, prompt
+  // ---------------- the logo's screen (as on the pfp): header, then the candles, all plain characters
   const SR = LAP.scr[1] - LAP.scr[0] + 1, SC = LAP.scr[3] - LAP.scr[2] + 1;
   const CANDLES = (() => { const out = [], top = 3, bot = SR - 4, x0 = 2, x1 = SC - 3, step = 2, Hh = bot - top + 1, N = Math.floor((x1 - x0) / step) + 1; let v = .1; const rows = p => top + Math.round((1 - p) * (Hh - 1));
     for (let i = 0; i < N; i++) { const up = i % 6 !== 4 && i % 7 !== 5, body = .025 + ((i * 37) % 34) / 1000 * 1.6, o = v, cl = up ? v + body * (10.8 / N + .6) : v - body * .5;
       const hi = Math.max(o, cl) + .02 + ((i * 13) % 18) / 600, lo = Math.min(o, cl) - .02 - ((i * 7) % 14) / 600, c = x0 + i * step, col = up ? G : RED;
-      for (let r = rows(hi); r <= rows(lo); r++) out.push([r, c, '│', col]); const rb0 = rows(Math.max(o, cl)), rb1 = Math.max(rb0, rows(Math.min(o, cl))); for (let r = rb0; r <= rb1; r++) out.push([r, c, '█', col]); v = Math.min(.92, cl); }
-    return out; })();
-  // floor cells hidden under the laptop's footprint (with a two-cell margin, like the pfp)
+      for (let r = rows(hi); r <= rows(lo); r++) out.push([r, c, '|', col]); const rb0 = rows(Math.max(o, cl)), rb1 = Math.max(rb0, rows(Math.min(o, cl))); for (let r = rb0; r <= rb1; r++) out.push([r, c, '#', col]); v = Math.min(.92, cl); }
+    const seen = new Map(); out.forEach(o => seen.set(o[0] * 1000 + o[1], o)); return [...seen.values()]; })();
   const UNDER = new Set(); for (const r of [LAP.ground, GROW]) for (let c = 0; c < LAP.C; c++) if (LAP.rows[r] && LAP.rows[r][c] !== ' ') for (let d = -2; d <= 2; d++) UNDER.add(c + d);
 
   function play(o) { const { canvas: cv, cursor: cur, app, onDone } = o, W = innerWidth, H = innerHeight, dpr = Math.min(2, devicePixelRatio || 1);
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); const x = cv.getContext('2d'); if (cur) cur.style.opacity = 0;
-    // ---------------- one grid for everything, sized so the laptop is the hero
-    const port = W < H, F = Math.min(W * (port ? .94 : .52) / (LAP.C * .6), H * (port ? .42 : .55) / (LAP.R * 1.18)), cw = F * .6, chh = F * 1.18;
+    const port = W < H;
+    let curFont = '', curF = 0;
+    const glyph = (gx, gy, k, col, a, w, F) => { x.globalAlpha = a; x.fillStyle = col; const f = w * 1000 + F; if (f !== curF) { x.font = `${w} ${F}px JB, ui-monospace, Menlo, monospace`; curF = f; } x.fillText(k, gx, gy + F * 1.18 * .78); };
+
+    // ================= act 1: the street =================
+    const A1 = { len: 3500, rise: 1150, close0: 1500, close1: 2050, light0: 2150, light1: 2650, zoom0: 2600, zoom1: 3500 };
+    let city = null, tgt = null, cityTried = false;
+    try { if (window.City && !City.ready()) City.load().catch(() => { }); } catch { }
+    function buildCity() { cityTried = true; try { if (!window.City || !City.ready()) return false; const fs = port ? clamp(W / 62, 7, 10) : clamp(W / 128, 9, 13);
+        const sc = (port ? .5 : .6) * H / 403, roll = 1500 - (W / 2) / sc; city = City.build(W, H, fs, null, { s: sc, wrap: true, roll }); city.oy = 0; city.wins = city.cells.filter(c => c.t === 'lit' || c.t === 'win');
+        let best = 1e9; for (const c of city.cells) if (c.t === 'lit') { const d = Math.hypot((c.c + .5) * city.cw - W * .5, ((c.r + .5) * city.ch + city.oy - H * .45) * 1.3); if (d < best) { best = d; tgt = c; } }
+        if (!tgt) tgt = city.wins[0] || city.cells[0]; city.tx = (tgt.c + .5) * city.cw; city.ty = (tgt.r + .5) * city.ch + city.oy;
+        city.maxD = Math.max(...city.wins.map(c => Math.hypot(c.c - tgt.c, (c.r - tgt.r) * 2))) || 1; return true; } catch (e) { console.warn("intro city", e); city = null; return false; } }
+    function drawCity(u) { const g = city, F = g.fs, zt = seg(u, A1.zoom0, A1.zoom1), z = Math.exp(ic(zt) * Math.log(110)), f = (z - 1) / 109;
+      const Px = lerp(g.tx, W / 2, f), Py = lerp(g.ty, H / 2, f), fade = 1 - seg(u, A1.zoom1 - 380, A1.zoom1 - 40);
+      x.setTransform(dpr * z, 0, 0, dpr * z, dpr * (Px - g.tx * z), dpr * (Py - g.ty * z)); x.textBaseline = 'alphabetic'; curF = 0;
+      const Y = r => r * g.ch + g.oy, vis = (c, r) => { const sx = (c * g.cw - g.tx) * z + Px, sy = (Y(r) - g.ty) * z + Py; return sx > -g.cw * z && sx < W && sy > -g.ch * z && sy < H; };
+      // the ground and the sky
+      for (const s of g.sky) { if (!vis(s.c, s.r)) continue; const k = s.k === '─' ? '_' : s.k, at = s.t === 'ground' ? 60 + Math.abs(s.c - g.C / 2) / g.C * 500 : 700 + hash(s.r, s.c) * 600; if (u < at) continue;
+        const tw = s.t === 'star' ? .55 + .45 * Math.sin(u / 260 + (s.ph || 0)) : 1; glyph(s.c * g.cw, Y(s.r), k, s.t === 'ground' ? GROUND : s.col, s.a * tw * fade, 500, F); }
+      // the buildings: decode from the ground up; windows close at the bell, then st0x lights them all, green
+      for (const c of g.cells) { if (!vis(c.c, c.r)) continue; const tr = 80 + (1 - c.r / g.R) * A1.rise + hash(c.r, c.c) * 160; if (u < tr) continue;
+        if (u < tr + 120) { glyph(c.c * g.cw, Y(c.r), nz(c.r, c.c, u), G, .45 * fade, 500, F); continue; }
+        let k = c.k, col = c.col, a = c.a, w = 600;
+        if (c.t === 'lit' || c.t === 'win') { const off = c.t === 'lit' && u > A1.close0 + (c.c / g.C) * (A1.close1 - A1.close0), on = u > A1.light0 + Math.hypot(c.c - tgt.c, (c.r - tgt.r) * 2) / g.maxD * (A1.light1 - A1.light0);
+          if (on) { k = '#'; col = G; a = .9; w = 700; } else if (off) { k = '.'; col = INK; a = .3; } else if (c.t === 'lit' && Math.floor(u / 520 + hash(c.r, c.c) * 9) % 7 === 0) { k = '.'; col = INK; a = .35; } }
+        glyph(c.c * g.cw, Y(c.r), k, col, a * fade, w, F); } }
+
+    // ================= act 2: the desk =================
+    const F = Math.min(W * (port ? .94 : .52) / (LAP.C * .6), H * (port ? .42 : .55) / (LAP.R * 1.18)), cw = F * .6, chh = F * 1.18;
     const groundY = H * (port ? .64 : .74), lx = Math.round(W / 2 - LAP.C * cw / 2), ly = groundY - (GROW + .5) * chh;
     const cX = c => lx + c * cw, rY = r => ly + r * chh;
     const S = { x: cX(LAP.scr[2]), y: rY(LAP.scr[0]), w: SC * cw, h: SR * chh }, Sc = { x: S.x + S.w / 2, y: S.y + S.h / 2 };
     const cMin = Math.floor(-lx / cw) - 2, cMax = Math.ceil((W - lx) / cw) + 2, midC = LAP.scr[2] + Math.floor(SC / 2), midR = LAP.scr[0] + Math.floor(SR / 2) - 1;
     const h = 21 * chh, footY = rY(GROW + .5), seatX = cX(50);
-    // ---------------- timeline (ms)
-    const T = { gnd0: 450, gnd1: 950, lap0: 850, row: 46, boot0: 2250 }; T.box0 = T.boot0 + 420; T.box1 = T.box0 + 320;
+    const T = { cur1: 380, gnd0: 300, gnd1: 760, lap0: 620, row: 40 }; T.boot0 = T.lap0 + LAP.R * T.row + 140; T.box0 = T.boot0 + 380; T.box1 = T.box0 + 300;
     const x0 = W + .3 * h, dist = x0 - seatX, nSteps = Math.max(2, Math.round(dist / (.45 * h))), AMP = Math.asin(Math.min(.8, dist / nSteps / (.92 * h)));
-    T.walk0 = 2450; T.walk1 = T.walk0 + clamp(dist / (1.3 * h) * 1000, 900, 1800); T.turn = T.walk1; T.sit0 = T.turn + 230; T.sit1 = T.sit0 + 540;
-    T.type0 = Math.max(T.sit1 + 160, T.box1 + 100); T.key = 150; T.enter = T.type0 + 6 * T.key + 120; T.ok = T.enter + 60;
-    T.term0 = T.ok + 420; T.sweep = 14; T.term1 = T.term0 + SC * T.sweep + 100; T.prompt0 = T.term0 + 380;
-    T.rev0 = T.term1 + 520; T.rev1 = T.rev0 + 420; T.dive0 = T.rev1 - 150; T.dive1 = T.dive0 + 1250; T.end = T.dive1;
+    T.walk0 = T.boot0 - 100; T.walk1 = T.walk0 + clamp(dist / (1.35 * h) * 1000, 850, 1600); T.turn = T.walk1; T.sit0 = T.turn + 220; T.sit1 = T.sit0 + 520;
+    T.type0 = Math.max(T.sit1 + 140, T.box1 + 100); T.key = 130; T.enter = T.type0 + 6 * T.key + 100; T.ok = T.enter + 60;
+    T.term0 = T.ok + 380; T.sweep = 14; T.term1 = T.term0 + SC * T.sweep + 100;
+    T.rev0 = T.term1 + 420; T.rev1 = T.rev0 + 420; T.dive0 = T.rev1 - 150; T.dive1 = T.dive0 + 1250;
     const keyAt = i => T.type0 + i * T.key;
-    // ---------------- camera: a slow drift in, then the dive into the screen
     const Zf = Math.max(W / S.w, H / S.h), zp = 1.05, k0 = Math.min(S.w / W, S.h / H);
-    let skip = false, done = false, raf = 0; const t0 = performance.now(); let tOff = 0;
     app.style.transformOrigin = '0 0';
 
-    // ---------------- the person: vectors drawn into a tiny raster, then read back as characters
+    // ---------------- the person: vectors drawn into a tiny raster, read back as line-art characters
     const SX = 4, SY = 8, PC = Math.ceil(1.15 * h / cw) + 4, PR = Math.ceil(1.12 * h / chh) + 3, pc = document.createElement('canvas'); pc.width = PC * SX; pc.height = PR * SY;
     const q = pc.getContext('2d', { willReadFrequently: true });
     const C_INK = 'rgb(255,0,0)', C_INK2 = 'rgb(255,0,255)', C_G = 'rgb(0,255,0)', C_G2 = 'rgb(0,255,255)';
@@ -84,7 +111,6 @@
       if (tk < .5) { q.translate(px, 0); q.scale(-(1 - tk * 2), 1); q.translate(-px, 0); side(px, env, p); }
       else { const sit = clamp(ob(seg(t, T.sit0, T.sit1)), 0, 1.04), pump = t > T.ok + 100 ? ob(seg(t, T.ok + 100, T.ok + 360)) * (1 - io(seg(t, T.ok + 800, T.ok + 1050))) : 0;
         q.translate(px, 0); q.scale((tk - .5) * 2, 1); q.translate(-px, 0); back(px, sit, t, Math.max(0, pump)); }
-      // coverage and class per cell, then line-art glyphs: edges follow the outline (| / \\ - _), insides fill
       const D = q.getImageData(0, 0, pc.width, pc.height).data, out = [], N = SX * SY, CV = new Float32Array(PC * PR), CL = new Uint8Array(PC * PR);
       for (let j = 0; j < PR; j++) for (let i = 0; i < PC; i++) { let cov = 0, wg = 0, wd = 0;
         for (let yy = 0; yy < SY; yy++) for (let xx = 0; xx < SX; xx++) { const k = ((j * SY + yy) * pc.width + i * SX + xx) * 4, a = D[k + 3] / 255; if (!a) continue; cov += a; if (D[k + 1] > D[k]) wg += a; if (D[k + 2] > 128) wd += a; }
@@ -103,78 +129,84 @@
         out.push([r0 + j, c0 + i, k, col, k === '#' || k === '%' || k === '=' ? .85 : 1]); }
       return out; }
 
-    // ---------------- the screen: boot, login, then the logo's chart
+    // ---------------- the screen: boot, login, then the logo's chart (plain characters only)
     function screenCells(t, put) {
       if (t < T.boot0) return;
-      const nz = (r, c) => NOISE[Math.floor(hash(r, c + Math.floor(t / 40) * 7) * NOISE.length)];
-      const type = (r, c0, s, col, w, at, step = 45) => [...s].forEach((k, i) => { const ti = at + i * step; if (t < ti) return; put(r, c0 + i, t < ti + 70 ? nz(r, c0 + i) : k, t < ti + 70 ? DIM : col, w); });
+      const type = (r, c0, s, col, w, at, step = 45) => [...s].forEach((k, i) => { const ti = at + i * step; if (t < ti) return; put(r, c0 + i, t < ti + 70 ? nz(r, c0 + i, t) : k, t < ti + 70 ? DIM : col, w); });
       type(0, 1, 'st0x', G, 800, T.boot0 + 120); type(0, SC - 7, '● 24/7', G, 700, T.boot0 + 260);
-      const d1 = Math.floor(SC * oc(seg(t, T.boot0 + 60, T.boot0 + 420))); for (let c = 0; c < d1; c++) put(1, c, '─', DIM);
-      const d2 = Math.floor(SC * oc(seg(t, T.boot0 + 200, T.boot0 + 560))); for (let c = 0; c < d2; c++) put(SR - 3, SC - 1 - c, '─', DIM);
+      const d1 = Math.floor(SC * oc(seg(t, T.boot0 + 60, T.boot0 + 420))); for (let c = 0; c < d1; c++) put(1, c, '-', DIM);
+      const d2 = Math.floor(SC * oc(seg(t, T.boot0 + 200, T.boot0 + 560))); for (let c = 0; c < d2; c++) put(SR - 3, SC - 1 - c, '-', DIM);
       if (t >= T.boot0 + 400) put(SR - 2, 1, '>', DIM, 700);
+      if (t >= T.boot0 + 400 && Math.floor(t / 380) % 2 === 0) put(SR - 2, 3, '_', G, 800);
       // the login box: drawn round clockwise, then swept away column by column into the chart
       const ok = t >= T.ok, bw = 27, bc0 = Math.floor((SC - bw) / 2), br = Math.floor(SR / 2) - 2, per = 2 * bw + 2, bd = Math.floor(per * oc(seg(t, T.box0, T.box1)));
       const swept = c => t >= T.term0 + c * T.sweep, flick = c => swept(c) && t < T.term0 + c * T.sweep + 90;
-      const bput = (r, c, k, col, w) => { if (flick(c)) put(r, c, nz(r, c), G2, 500); else if (!swept(c)) put(r, c, k, col, w); };
+      const bput = (r, c, k, col, w) => { if (flick(c)) put(r, c, nz(r, c, t), G2, 500); else if (!swept(c)) put(r, c, k, col, w); };
       if (bd > 0) { const boxCol = ok ? G : DIM, path = [];
-        for (let c = 0; c < bw; c++) path.push([br, bc0 + c, c === 0 ? '╭' : c === bw - 1 ? '╮' : '─']); path.push([br + 1, bc0 + bw - 1, '│']);
-        for (let c = bw - 1; c >= 0; c--) path.push([br + 2, bc0 + c, c === 0 ? '╰' : c === bw - 1 ? '╯' : '─']); path.push([br + 1, bc0, '│']);
-        path.slice(0, bd).forEach(([r, c, k]) => bput(r, c, k, boxCol, 500));
-        if (t >= T.box1) { bput(br + 1, bc0 + 2, '›', ok ? G : DIM, 700); let n = 0; for (let i = 0; i < 6; i++) if (t >= keyAt(i)) { n = i + 1; bput(br + 1, bc0 + 4 + i, '•', ok ? G : INK, 700); }
-          if (!ok && Math.floor(t / 380) % 2 === 0) bput(br + 1, bc0 + 4 + n, '█', G, 500);
-          if (ok) bput(br + 1, bc0 + bw - 3, t < T.ok + 80 ? '·' : '✓', G, 800); } }
+        for (let c = 0; c < bw; c++) path.push([br, bc0 + c, c === 0 || c === bw - 1 ? '+' : '-']); path.push([br + 1, bc0 + bw - 1, '|']);
+        for (let c = bw - 1; c >= 0; c--) path.push([br + 2, bc0 + c, c === 0 || c === bw - 1 ? '+' : '-']); path.push([br + 1, bc0, '|']);
+        path.slice(0, bd).forEach(([r, c, k]) => bput(r, c, k, boxCol, 600));
+        if (t >= T.box1) { bput(br + 1, bc0 + 2, '>', ok ? G : DIM, 700); let n = 0; for (let i = 0; i < 6; i++) if (t >= keyAt(i)) { n = i + 1; bput(br + 1, bc0 + 4 + i, '*', ok ? G : INK, 700); }
+          if (!ok && Math.floor(t / 380) % 2 === 0) bput(br + 1, bc0 + 4 + n, '_', G, 800); } }
       // the chart from the logo, revealed by the same sweep
-      for (const [r, c, k, col] of CANDLES) if (swept(c) && !flick(c)) put(r, c, k, col, 500);
-      // the prompt: waiting while they log in, then the logo's own line
-      if (t < T.prompt0) { if (t > T.boot0 + 400 && Math.floor(t / 380) % 2 === 0) put(SR - 2, 3, '█', G); }
-      else { const s = 'buy NVDAx', n = Math.min(s.length, Math.floor((t - T.prompt0) / 55)); for (let i = 0; i < n; i++) put(SR - 2, 3 + i, s[i], INK, 700); if (n < s.length || Math.floor(t / 420) % 2 === 0) put(SR - 2, 4 + n, '█', G); } }
+      for (const [r, c, k, col] of CANDLES) if (swept(c) && !flick(c)) put(r, c, k, col, 800); }
 
-    // ---------------- glyphs
-    let curFont = '';
-    const glyph = (gx, gy, k, col, a, w = 600) => { x.globalAlpha = a; x.fillStyle = col;
-      if (k === '█') return x.fillRect(gx + cw * .08, gy, cw * .84, chh + .5);
-      if (k === '│') return x.fillRect(gx + cw / 2 - Math.max(.7, cw * .08), gy, Math.max(1.4, cw * .16), chh + .5);
-      if (k === '─') return x.fillRect(gx, gy + chh / 2 - Math.max(.6, chh * .035), cw + .5, Math.max(1.2, chh * .07));
-      const f = `${w} ${F}px JB, ui-monospace, Menlo, monospace`; if (f !== curFont) { x.font = f; curFont = f; } x.fillText(k, gx, gy + chh * .78); };
+    // ---------------- ASCII speed streaks for the dive
+    const STREAKS = Array.from({ length: 46 }, (_, i) => ({ a: i / 46 * TAU + ((i * 73) % 7) * .03, r: .42 + ((i * 37) % 10) / 40, l: .1 + ((i * 53) % 9) / 45 }));
+    const streakChar = a => { let d = ((a * 180 / Math.PI) % 180 + 180) % 180; return d < 22.5 || d > 157.5 ? '-' : d < 67.5 ? '\\' : d < 112.5 ? '|' : '/'; };
 
-    function frame(now) { let t = now - t0 + tOff; if (skip && t < T.dive0) { tOff += T.dive0 - t; t = T.dive0; }
+    function drawDesk(t) {
       const e = io(seg(t, T.dive0, T.dive1)), z = e > 0 ? zp * Math.exp(e * Math.log(Zf / zp)) : lerp(1, zp, io(seg(t, 0, T.dive0))), f = e > 0 ? (z - zp) / (Zf - zp) : 0;
       const P = { x: lerp(Sc.x, W / 2, f), y: lerp(Sc.y, H / 2, f) }, zc = e > 0 ? z * Math.pow(z / zp, .5) : z;
       const world = (zz, dy = 0) => x.setTransform(dpr * zz, 0, 0, dpr * zz, dpr * (P.x - Sc.x * zz), dpr * (P.y - Sc.y * zz + dy));
-      x.setTransform(dpr, 0, 0, dpr, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, W, H); x.fillStyle = '#fff'; x.fillRect(0, 0, W, H);
-      world(z); x.textBaseline = 'alphabetic'; curFont = '';
-      // the floor line, drawn out of the cursor both ways
+      world(z); x.textBaseline = 'alphabetic'; curF = 0;
+      // the person first (as cells), so whatever sits behind them on the grid simply isn't drawn there
+      const pcs = t > T.walk0 && e < .7 ? personCells(t) : [], hide = new Set(), sameGrid = e === 0;
+      if (sameGrid) for (const p of pcs) hide.add((p[0] + 500) * 100000 + p[1] + 50000);
+      const shown = (r, c) => !hide.has((r + 500) * 100000 + c + 50000);
+      // the floor, drawn out of the cursor both ways
       const reach = oc(seg(t, T.gnd0, T.gnd1)) * Math.max(midC - cMin, cMax - midC);
-      for (let c = cMin; c <= cMax; c++) if (Math.abs(c - midC) <= reach && !(t > T.lap0 && UNDER.has(c))) glyph(cX(c), rY(GROW), '─', GROUND, 1);
+      for (let c = cMin; c <= cMax; c++) if (Math.abs(c - midC) <= reach && !(t > T.lap0 && UNDER.has(c)) && shown(GROW, c)) glyph(cX(c), rY(GROW), '_', GROUND, 1, 500, F);
       // the laptop (the st0x logo) decoding from the floor up
       for (let r = 0; r < LAP.R; r++) { const row = LAP.rows[r], cols = LAP.cols[r], al = LAP.alph[r];
-        for (let c = 0; c < LAP.C; c++) { const k = row[c]; if (k === ' ') continue; const tr = T.lap0 + (LAP.R - 1 - r) * T.row + hash(r, c) * 130; if (t < tr) continue;
-          if (t < tr + 150) glyph(cX(c), rY(r), NOISE[Math.floor(hash(r, c + Math.floor(t / 45) * 7) * NOISE.length)], G, .55, 500);
-          else glyph(cX(c), rY(r), k, cols[c] === 'g' ? G : INK, (+al[c]) / 9, 600); } }
-      // the cursor: blinks on the floor, climbs with the build, waits in the screen
-      if (t < T.box1) { const cr = t < T.lap0 ? GROW : Math.max(midR, LAP.R - 1 - Math.floor((t - T.lap0) / T.row));
-        if ((t > T.lap0 && t < T.lap0 + LAP.R * T.row) || Math.floor(t / 260) % 2 === 0) glyph(cX(midC), rY(cr), '█', G, 1); }
+        for (let c = 0; c < LAP.C; c++) { const k = row[c]; if (k === ' ' || !shown(r, c)) continue; const tr = T.lap0 + (LAP.R - 1 - r) * T.row + hash(r, c) * 130; if (t < tr) continue;
+          if (t < tr + 150) glyph(cX(c), rY(r), nz(r, c, t), G, .55, 500, F); else glyph(cX(c), rY(r), k, cols[c] === 'g' ? G : INK, (+al[c]) / 9, 600, F); } }
+      // the cursor: arrives from the window we flew through, blinks on the floor, climbs with the build, waits in the screen
+      if (t < T.box1) { const cr = t < T.lap0 ? GROW : Math.max(midR, LAP.R - 1 - Math.floor((t - T.lap0) / T.row)), m = oc(seg(t, 0, T.cur1));
+        const gx = lerp(W / 2 - cw / 2, cX(midC), m), gy = lerp(H / 2 - chh / 2, rY(cr), m);
+        if (t < T.cur1 || (t > T.lap0 && t < T.lap0 + LAP.R * T.row) || Math.floor(t / 260) % 2 === 0) glyph(gx, gy, '#', G, 1, 800, F); }
       // what's on the screen
-      screenCells(t, (r, c, k, col, w = 500) => glyph(cX(LAP.scr[2] + c), rY(LAP.scr[0] + r), k, col, 1, w));
+      screenCells(t, (r, c, k, col, w = 500) => { const rr = LAP.scr[0] + r, cc = LAP.scr[2] + c; if (shown(rr, cc)) glyph(cX(cc), rY(rr), k, col, 1, w, F); });
       // the real terminal, showing through the screen
       const rev = seg(t, T.rev0, T.rev1); if (rev > 0) { x.save(); x.globalCompositeOperation = 'destination-out'; x.globalAlpha = rev; x.fillRect(S.x - .5, S.y - .5, S.w + 1, S.h + 1); x.restore(); }
-      // the person, in front: a white halo so they read cleanly over the laptop; nearer the camera, so they drop away first
-      if (t > T.walk0 && e < .7) { const pcs = personCells(t); world(zc, H * 1.3 * e); x.globalAlpha = 1; x.fillStyle = '#fff';
-        const halo = new Set(); for (const [r, c] of pcs) for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) if (r + dr <= GROW) halo.add((r + dr + 500) * 100000 + (c + dc + 50000));
-        for (const kk of halo) { const r = Math.floor(kk / 100000) - 500, c = kk % 100000 - 50000; x.fillRect(cX(c) - .5, rY(r) - .5, cw + 1, chh + 1); }
-        for (const [r, c, k, col, a] of pcs) glyph(cX(c), rY(r), k, col, a, 700); }
-      // the dive: speed lines around the screen
-      x.setTransform(dpr, 0, 0, dpr, 0, 0); x.globalAlpha = 1;
-      const sp = Math.sin(Math.PI * clamp((e - .1) / .8)); if (sp > 0) { const sw = S.w * z, sh = S.h * z; x.save(); x.beginPath(); x.rect(0, 0, W, H); x.rect(P.x - sw / 2, P.y - sh / 2, sw, sh); x.clip('evenodd');
-        x.strokeStyle = '#cfd6d3'; x.lineCap = 'round'; const D = Math.hypot(W, H) / 2; for (let i = 0; i < 44; i++) { const a = i / 44 * TAU + ((i * 73) % 7) * .03, r0 = D * (.42 + ((i * 37) % 10) / 40) * (1 - .25 * e), l = D * (.1 + ((i * 53) % 9) / 50);
-          x.globalAlpha = sp * .7; x.lineWidth = 1 + (i % 3); x.beginPath(); x.moveTo(W / 2 + Math.cos(a) * r0, H / 2 + Math.sin(a) * r0); x.lineTo(W / 2 + Math.cos(a) * (r0 + l), H / 2 + Math.sin(a) * (r0 + l)); x.stroke(); } x.restore(); x.globalAlpha = 1; }
+      // the person, in front; nearer the camera, so they drop away first when we dive
+      if (pcs.length) { world(zc, H * 1.3 * e); curF = 0; for (const [r, c, k, col, a] of pcs) glyph(cX(c), rY(r), k, col, a, 700, F); }
+      // the dive: ASCII streaks around the screen
+      x.setTransform(dpr, 0, 0, dpr, 0, 0); curF = 0;
+      const sp = Math.sin(Math.PI * clamp((e - .1) / .8)); if (sp > 0) { const sw = S.w * z, sh = S.h * z, D = Math.hypot(W, H) / 2, Fs = clamp(F * 1.1, 10, 18), stp = Fs * .7;
+        for (const s of STREAKS) { const ch = streakChar(s.a), r0 = D * s.r * (1 - .25 * e), r1 = r0 + D * s.l;
+          for (let r = r0; r < r1; r += stp) { const px = W / 2 + Math.cos(s.a) * r, py = H / 2 + Math.sin(s.a) * r; if (px < -20 || px > W + 20 || py < -20 || py > H + 20) continue;
+            if (Math.abs(px - P.x) < sw / 2 && Math.abs(py - P.y) < sh / 2) continue; glyph(px - Fs * .3, py - Fs * .6, ch, STREAK, sp * (1 - (r - r0) / (r1 - r0) * .6), 700, Fs); } } }
       // the terminal itself sits inside the screen and grows with it
       const k = k0 * z; app.style.transform = `translate(${(P.x - W * k / 2).toFixed(2)}px,${(P.y - H * k / 2).toFixed(2)}px) scale(${k.toFixed(5)})`;
-      if (t >= T.end) { if (!done) { done = true; app.style.transform = ''; app.style.transformOrigin = ''; onDone && onDone(); } return; }
+      return t >= T.dive1; }
+
+    // ================= the clock =================
+    let skip = false, done = false, raf = 0, base = null, a1 = A1.len; const t0 = performance.now(); let tOff = 0;
+    function frame(now) { let t = now - t0 + tOff;
+      if (base === null) { if (!cityTried || !city) buildCity(); if (city) base = t; else if (t > 900) { base = t; a1 = 0; } }
+      x.setTransform(dpr, 0, 0, dpr, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, W, H); x.fillStyle = '#fff'; x.fillRect(0, 0, W, H);
+      if (base === null && skip) { base = t; a1 = 0; }
+      if (base === null) { if (Math.floor(t / 260) % 2 === 0) glyph(W / 2 - cw / 2, H / 2 - chh / 2, '#', G, 1, 800, F); app.style.transform = `translate(${W / 2}px,${H / 2}px) scale(.001)`; raf = requestAnimationFrame(frame); return; }
+      let t2 = t - base - a1; if (skip && t2 < T.dive0) { tOff += T.dive0 - t2; t += T.dive0 - t2; t2 = T.dive0; }
+      let end = false;
+      if (t2 < 0) { drawCity(t - base); app.style.transform = `translate(${W / 2}px,${H / 2}px) scale(.001)`; }
+      else end = drawDesk(t2);
+      if (end) { if (!done) { done = true; app.style.transform = ''; app.style.transformOrigin = ''; onDone && onDone(); } return; }
       raf = requestAnimationFrame(frame); }
 
     frame(performance.now());
-    return { skip() { skip = true; }, length: T.end, finish() { cancelAnimationFrame(raf); app.style.transform = ''; app.style.transformOrigin = ''; if (!done) { done = true; onDone && onDone(); } } };
+    return { skip() { skip = true; }, length: A1.len + T.dive1, finish() { cancelAnimationFrame(raf); app.style.transform = ''; app.style.transformOrigin = ''; if (!done) { done = true; onDone && onDone(); } } };
   }
   window.Intro = { play };
 })();
