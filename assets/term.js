@@ -58,7 +58,7 @@
   function paintSel() { const s = byMint(S.sel); if (!s) return; $('#chIcon').src = s.icon; $('#chSym').textContent = s.tok; $('#chName').textContent = s.name + ' · ' + s.sym;
     $('#chPx').textContent = usd(s.usd); const c = $('#chCh'); c.textContent = pct(s.ch24) + ' 24h'; c.className = cls(s.ch24);
     $('#chMeta').innerHTML = [['liquidity', big(s.liq)], ['24h volume', big(s.vol24)], ['holders', s.holders ? num(s.holders, 0) : '—'], ['share price', s.ref ? usd(s.ref) : '—'], ['gap', `<span class="${cls(s.gap)}">${pct(s.gap)}</span>`]].map(([k, v]) => `<span>${k} <b>${v}</b></span>`).join('');
-    $('#chStar').textContent = S.fav.has(s.mint) ? '[ ★ ]' : '[ ☆ ]'; $('#chStar').classList.toggle('on', S.fav.has(s.mint)); paintSince(); paintTicket(); }
+    $('#chStar').textContent = S.fav.has(s.mint) ? '★' : '☆'; $('#chStar').classList.toggle('on', S.fav.has(s.mint)); paintSince(); paintTicket(); }
   let CH = { rows: [], hover: -1 }, chartReq = 0;
   async function loadCandles() { const id = ++chartReq, s = byMint(S.sel); $('#chMsg').textContent = 'loading candles…'; $('#chMsg').style.display = '';
     try { const j = await getJ(`${API}?a=candles&mint=${S.sel}&tf=${S.tf}`); if (id !== chartReq) return; CH = { rows: j.rows, hover: -1, tf: j.tf, dex: j.dex };
@@ -77,8 +77,8 @@
     x.font = '600 10px JB, monospace';
     // nyse-closed bands
     let bs = -1; const bands = []; rows.forEach((r, i) => { const c = closedAt(r.t); if (c && bs < 0) bs = i; if ((!c || i === rows.length - 1) && bs >= 0) { bands.push([bs, c ? i : i - 1]); bs = -1; } });
-    for (const [s, e] of bands) { const x0 = s * step, x1 = (e + 1) * step; x.fillStyle = '#eefaf3'; x.fillRect(x0, 0, x1 - x0, H - B); x.fillStyle = '#bfe8cf'; x.fillRect(x0, 0, 1, H - B); x.fillRect(x1 - 1, 0, 1, H - B);
-      if (x1 - x0 > 74) { x.fillStyle = '#12a150'; x.globalAlpha = .9; x.fillText('nyse closed', x0 + 6, 12); x.globalAlpha = 1; } }
+    for (const [s, e] of bands) { const x0 = s * step, x1 = (e + 1) * step; x.fillStyle = '#f4fbf7'; x.fillRect(x0, 0, x1 - x0, H - B); x.fillStyle = '#dcefe3'; x.fillRect(x0, 0, 1, H - B);
+      if (x1 - x0 > 74) { x.fillStyle = '#12a150'; x.globalAlpha = .55; x.fillText('nyse closed', x0 + 6, 12); x.globalAlpha = 1; } }
     // grid + price axis
     const st = niceStep((b - a) / 5); x.fillStyle = '#9aa39f'; x.textAlign = 'left';
     for (let v = Math.ceil(a / st) * st; v <= b; v += st) { const y = Y(v); x.fillStyle = '#e3e7e5'; for (let gx = 0; gx < W - R; gx += 6) x.fillRect(gx, Math.round(y), 2, 1); x.fillStyle = '#878f8b'; x.fillText(usd(v), W - R + 8, y + 3); }
@@ -284,7 +284,7 @@
     if (pending && /^(y|yes|sign|ok)$/.test(cmd)) { const p = pending; pending = null; return p(); } if (pending && /^(n|no|cancel)$/.test(cmd)) { pending = null; return log('cancelled.', 'dim'); } pending = null;
     if (!S.board) return log('the board is still loading…', 'dim');
     switch (cmd) {
-      case 'help': case '?': return log(HELP.map(([c, d]) => `${c.padEnd(22)}${d}`).join('\n'), 'dim');
+      case 'help': case '?': return log(HELP.map(([c, d]) => `${c.padEnd(Math.max(...HELP.map(h => h[0].length)) + 3)}${d}`).join('\n'), 'dim');
       case 'clear': case 'cls': $('#conLog').innerHTML = ''; return;
       case 'connect': return openWallets();
       case 'disconnect': return disconnect();

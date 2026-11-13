@@ -100,3 +100,82 @@ body{background:#fff}
   .bt-pane{height:200px}
 }
 @media (min-width:901px){.mview{display:none}}
+#introCur{left:0!important;top:0!important;margin:0!important;width:14px;height:26px;transform-origin:50% 50%;will-change:transform}
+#intro{background:transparent}
+
+/* ===================================================================== clean pass */
+:root{--line:#eceeed;--soft:#f7f8f8}
+body{font-size:14px}
+.top{height:52px;gap:22px;padding:0 18px;border-bottom:1px solid var(--line)}
+#app{grid-template-rows:52px 32px minmax(0,1fr) auto}
+.top .logo{font-size:20px}
+.views{gap:4px}.views button{padding:7px 12px;border-radius:7px;font-size:12.5px;color:var(--mute)}.views button:hover{color:var(--ink);background:var(--soft)}.views button.on{background:var(--soft);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line);font-weight:800}
+.pill{padding:6px 11px;box-shadow:inset 0 0 0 1px var(--line);background:#fff;font-size:11.5px}
+.wbtn{border-radius:8px;padding:9px 14px}
+#tape{height:32px;border-bottom:1px solid var(--line);background:var(--soft)}
+.tp{border-right:0;padding:0 20px}.tp b{font-weight:700}.tp em{color:var(--ink2)}
+.desk{border-top:0}
+/* watchlist */
+.wl{background:#fff}
+.wl-top{padding:12px;border-bottom:0;gap:10px}
+.wl-top input{padding:10px 12px;border-radius:8px;background:var(--soft);border:1px solid transparent;font-size:12.5px}.wl-top input:focus{background:#fff;border-color:var(--ink)}
+.wl-sort button{padding:4px 9px;border-radius:6px}.wl-sort button.on{background:var(--soft);color:var(--ink);font-weight:800;box-shadow:inset 0 0 0 1px var(--line)}
+.wl-head{border-bottom:1px solid var(--line);padding:6px 14px;font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.wr{padding:9px 14px;border-bottom:0;grid-template-columns:1fr 78px 64px}
+.wr:hover{background:var(--soft)}.wr.sel{background:#f2faf5;box-shadow:inset 3px 0 0 var(--g)}
+.wr img{width:26px;height:26px}.wr .nm b{font-size:12.5px}.wr .nm small{font-size:10.5px}
+.wr .c{justify-self:end;font-size:11px;padding:3px 6px;border-radius:5px;min-width:58px;text-align:center}
+.wr .c.u{background:#eaf7ef}.wr .c.d{background:#fdeeee}
+/* chart header */
+.ch-top{padding:14px 18px;gap:20px;border-bottom:0}
+.ch-id img{width:36px;height:36px}.ch-id b{font-size:18px}
+.ch-px b{font-size:24px;letter-spacing:-.02em}.ch-px span{font-size:12px;padding:3px 7px;border-radius:6px}.ch-px span.u{background:#eaf7ef}.ch-px span.d{background:#fdeeee}
+.ch-tf{gap:2px;padding:3px;border-radius:8px;background:var(--soft)}.ch-tf button{padding:5px 10px;border-radius:6px}.ch-tf button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08);font-weight:800}
+.ch-tools button{padding:6px 8px;border-radius:7px;color:var(--mute)}.ch-tools button:hover{background:var(--soft);color:var(--ink)}
+.ch-meta{gap:0;padding:0 18px 12px;border-bottom:1px solid var(--line);font-size:10.5px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.ch-meta>span{display:flex;flex-direction:column;gap:2px;padding:0 18px 0 0;margin-right:18px;border-right:1px solid var(--line);white-space:nowrap;text-transform:uppercase;letter-spacing:.06em}
+.ch-meta>span:last-child{border-right:0}.ch-meta b{font-size:13px;letter-spacing:0;text-transform:none;color:var(--ink)}
+.ch-meta .since{color:var(--mute)}
+.ch-depth{display:none}
+.ch-legend{border-top:0;padding:6px 18px;font-size:10.5px}
+.bt-tabs{padding:0 14px;border-top:1px solid var(--line);gap:6px}
+.bt-tabs button{padding:10px 4px;margin-right:12px;border-radius:0;background:none!important;box-shadow:none!important;font-size:12px}.bt-tabs button.on{color:var(--ink);box-shadow:inset 0 -2px 0 var(--g)!important}
+.bt-pane{background:#fff;border-top:1px solid var(--line)}
+.tr-h{background:#fff;text-transform:uppercase;letter-spacing:.06em}.tr{border-bottom:1px solid #f2f4f3}
+/* ticket */
+.side{background:#fff}
+.side .tk{padding:16px;gap:10px}
+.tk-side{padding:4px;border-radius:10px}.tk-side button{padding:10px;border-radius:8px;font-size:13px}
+.tk-side button[data-side=buy].on{background:var(--g);color:#fff}.tk-side button[data-side=sell].on{background:var(--r);color:#fff}
+.tk-type button{border-radius:6px}
+.tk-l{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em}
+.tk-in{border-radius:10px;border:1px solid var(--line);background:var(--soft)}.tk-in:focus-within{background:#fff;border-color:var(--ink)}
+.tk-in input{background:transparent;font-size:20px;padding:12px 14px}.tk-in button{background:transparent;border-left:1px solid var(--line)}
+.tk-pct button{border-radius:7px;padding:6px}
+.tk-out{font-size:22px}
+.tk-q{background:var(--soft);border-radius:10px;padding:12px;gap:7px}
+.btn.go{border-radius:10px;padding:14px;font-size:14px}
+.side .od,.side .pf{border-top:1px solid var(--line)}
+/* dock */
+.dock{border-top:1px solid var(--line);position:relative}
+.con{background:#fff}
+.con-log{height:0;padding:0 18px;transition:height .25s ease,padding .25s ease}
+.dock.open .con-log{height:clamp(110px,22vh,220px);padding:10px 18px 4px}
+.con-in{padding:11px 18px;border-top:0;font-size:13px}
+.con-t{position:absolute;right:14px;top:9px;z-index:2;font-size:11px;padding:4px 9px;border-radius:6px;color:var(--mute);box-shadow:inset 0 0 0 1px var(--line);background:#fff}.dock.open .con-t{color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.con-hint{right:70px}
+.sbar{height:28px;gap:22px;padding:0 18px;background:#0d0f0e}
+.sbar span{color:#b8c1bc}
+/* views */
+.vh{padding:18px 22px;border-bottom:1px solid var(--line)}.vh b{font-size:19px}
+.vb{padding:20px 22px 34px}
+.gap-sum{border-radius:12px}
+.nmc{border-radius:12px}
+.hm{border-radius:12px;border-color:var(--line)}
+@media (max-width:900px){#app{grid-template-rows:52px 30px minmax(0,1fr) auto 52px}.ch-meta>span{padding-right:12px;margin-right:12px}.con-t{display:none}.dock .con-log{height:0}#app[data-m=console] .dock .con-log{height:42vh;padding:10px 18px}}
+.ch-tools{gap:2px}.ch-tools button{font-size:12px;padding:6px 10px;box-shadow:inset 0 0 0 1px var(--line);margin-left:4px}.ch-tools #chStar{font-size:14px;padding:4px 9px}.ch-tools #chStar.on{color:#d79b00;box-shadow:inset 0 0 0 1px #f0d48a;background:#fffaf0}
+/* the log slides up over the desk instead of squeezing it */
+.dock .con{position:relative}
+.dock .con-log{position:absolute;left:0;right:0;bottom:100%;z-index:6;background:#fff;border-top:0 solid var(--line)}
+.dock.open .con-log{border-top-width:1px;box-shadow:0 -14px 34px rgba(13,15,14,.08)}
+@media (max-width:900px){.dock .con-log{position:static;box-shadow:none}}

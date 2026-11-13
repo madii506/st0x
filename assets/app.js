@@ -38,7 +38,7 @@
     $('#tbNyse').textContent = 'nyse ' + (n.open ? 'open · closes ' : 'closed · opens ') + (n.next ? X.etLabel(n.next) : '');
     $('#sbNyse').textContent = `nyse ${n.open ? 'open' : 'closed'} · ${n.open ? 'closes' : 'opens'} ${n.next ? X.etLabel(n.next) : ''} (${left})`;
     $('#sbClock').textContent = X.etLabel(Date.now()) + ' · ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' local';
-    if (lastBoard) { const s = Math.round((Date.now() - lastBoard) / 1000); $('#sbUpd').textContent = `board ${S.board ? S.board.count : '—'} stocks · updated ${s}s ago`; }
+    if (lastBoard) { const s = Math.round((Date.now() - lastBoard) / 1000); $('#sbUpd').textContent = `updated ${s}s ago`; }
     paintNow(); paintClocks(n); }
   const CLK = [['new york', 'America/New_York'], ['london', 'Europe/London'], ['dubai', 'Asia/Dubai'], ['tokyo', 'Asia/Tokyo']];
   const fmt = {}; CLK.forEach(([, z]) => fmt[z] = new Intl.DateTimeFormat('en-GB', { timeZone: z, hour: '2-digit', minute: '2-digit', weekday: 'short' })); const fmtMe = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', weekday: 'short' });
@@ -119,36 +119,28 @@
   const WM = ['     _    ___', ' ___| |_ / _ \\__  __', '/ __| __| | | \\ \\/ /', '\\__ \\ |_| |_| |>  <', '|___/\\__|\\___//_/\\_\\'];
   $('#footWm').innerHTML = WM.map(l => [...l].map((c, i) => i >= 8 && i < 15 && c !== ' ' ? `<b>${esc(c)}</b>` : esc(c)).join('')).join('\n');
 
-  // ---------------------------------------------------------------- intro (~9s, no words) and the hand-off into the live terminal
+  // ---------------------------------------------------------------- intro (~6.5s, no words): the line, the bell, the week, the cursor, the terminal
   let playing = false;
-  const fsFor = w => w < 560 ? 9 : w < 900 ? 10.5 : w < 1400 ? 12 : 13;
+  const PANELS = ['.top', '#tape', '.wl', '.center', '.side', '.dock'];
   function overlay() { let o = $('#intro'); if (!o) { o = document.createElement('div'); o.id = 'intro'; o.setAttribute('aria-hidden', 'true'); o.innerHTML = '<canvas id="introCv"></canvas><i id="introCur"></i>'; document.body.prepend(o); } return o; }
-  const panelRects = () => ['.top', '#tape', '.wl', '.center', '.side', '.dock'].map(s => $(s)).filter(e => e && e.offsetParent !== null).map(e => { const r = e.getBoundingClientRect(); return { x: r.left + 3, y: r.top + 3, w: r.width - 6, h: r.height - 6 }; }).filter(r => r.w > 10 && r.h > 10);
-  function reveal(fast) { const app = $('#app'); app.classList.add('in'); if (fast) return;
-    gsap.fromTo(['.top', '#tape', '.wl', '.center', '.side', '.dock'], { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: .55, ease: 'power3.out', stagger: .06, clearProps: 'transform,opacity' }); }
-  function playIntro() { if (playing || !window.City) { reveal(true); return; } playing = true; const o = overlay(), icv = $('#introCv'), cur = $('#introCur'); gsap.set([o, icv, cur], { clearProps: 'all' });
-    $('#app').classList.add('in'); gsap.set(['.top', '#tape', '.wl', '.center', '.side', '.dock'], { opacity: 0 });
-    const W = innerWidth, H = innerHeight, g = City.ready() ? City.build(W, H, fsFor(W), null) : City.bare(W, H, fsFor(W));
-    const blink = gsap.to(cur, { opacity: 0, duration: .01, repeat: 3, yoyo: true, repeatDelay: .12, ease: 'none' });
-    let finished = false, run = null; const t0 = performance.now();
-    const unlock = () => { o.remove(); playing = false; removeEventListener('pointerdown', skip); removeEventListener('keydown', skip); };
-    const end = () => { if (finished) return; finished = true; blink.kill(); gsap.set(cur, { opacity: 1 }); if (document.hidden) { unlock(); reveal(true); gsap.set(['.top', '#tape', '.wl', '.center', '.side', '.dock'], { clearProps: 'opacity' }); return; }
-      // the drawn wireframes become the real panels; the cursor drops into the command line
-      const tgt = $('#conIn').getBoundingClientRect(), now = cur.getBoundingClientRect();
-      gsap.timeline({ onComplete: unlock })
-        .to(['.top', '#tape', '.wl', '.center', '.side', '.dock'], { opacity: 1, duration: .5, ease: 'power2.out', stagger: .05, clearProps: 'opacity' }, .1)
-        .to(cur, { x: tgt.left + 4 - (now.left + now.width / 2), y: tgt.top + tgt.height / 2 - (now.top + now.height / 2), scaleX: .4, scaleY: .5, duration: .7, ease: 'expo.inOut' }, 0)
-        .to(icv, { opacity: 0, duration: .5 }, .1).to(o, { backgroundColor: 'rgba(255,255,255,0)', duration: .4 }, .2).to(cur, { opacity: 0, duration: .2 }, .7)
-        .add(() => { $('#conIn').focus({ preventScroll: true }); }, .75); };
-    function skip(e) { if (performance.now() - t0 < 600) return; if (e.type === 'keydown' && !['Escape', 'Enter', ' '].includes(e.key)) return; run && run.skip(); }
+  function reveal(fast) { $('#app').classList.add('in'); if (fast) return; gsap.fromTo(PANELS, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: .5, ease: 'power3.out', stagger: .05, clearProps: 'transform,opacity' }); }
+  function playIntro() { if (playing || !window.Intro) { reveal(true); return; } playing = true; const o = overlay(), cv = $('#introCv'), cur = $('#introCur'), app = $('#app');
+    gsap.set([o, cv, cur], { clearProps: 'all' }); app.classList.add('in');
+    let run = null; const t0 = performance.now();
+    const fin = () => { o.remove(); playing = false; removeEventListener('pointerdown', skip); removeEventListener('keydown', skip);  setTimeout(() => $('#conIn').focus({ preventScroll: true }), 300); };
+    function skip(e) { if (performance.now() - t0 < 500) return; if (e.type === 'keydown' && !['Escape', 'Enter', ' '].includes(e.key)) return; run && run.skip(); }
     addEventListener('pointerdown', skip); addEventListener('keydown', skip);
-    try { run = City.intro(icv, g, end, cur, { panels: panelRects }); } catch (e) { console.error(e); unlock(); reveal(true); gsap.set(['.top', '#tape', '.wl', '.center', '.side', '.dock'], { clearProps: 'opacity' }); return; }
-    gsap.fromTo(icv, { scale: 1.16 }, { scale: 1, duration: 4.2, ease: 'power2.out' });
-    if (!City.ready()) City.load().then(() => { try { run.setCity(City.build(W, H, fsFor(W), null)); } catch (e) { console.error(e); } }).catch(() => run.setCity({ cells: [], sky: [], R: 1, C: 1 }));
-    setTimeout(() => { if (!finished && !document.hidden) end(); }, 14000); }
+    // the overlay only paints the canvas (the page behind is white); the app, clipped to nothing, opens out of the cursor at the end
+    o.style.background = 'transparent';
+    try { run = Intro.play({ canvas: cv, cursor: cur, app, onDone: fin }); } catch (e) { console.error(e); app.style.clipPath = ''; fin(); return; }
+    setTimeout(() => { if (playing && !document.hidden) run.finish(); }, 11000); }
   $('.logo').addEventListener('click', e => { e.preventDefault(); playIntro(); });
 
   // ---------------------------------------------------------------- go
+  // the command log stays tucked away until it's wanted; a command opens it
+  const dock = $('.dock'); $('#conT').addEventListener('click', () => dock.classList.toggle('open'));
+  $('#conIn').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.value.trim()) dock.classList.add('open'); });
+  new MutationObserver(() => { if (!dock.classList.contains('open')) { const l = $('#conLog').lastElementChild; if (l && /er|ok/.test(l.className)) { dock.classList.add('open'); } } }).observe($('#conLog'), { childList: true });
   buildWeek(); paintWeek(0); loadHours(); setInterval(tick, 1000); setInterval(loadHours, 10 * 60e3);
   X.on(b => { lastBoard = Date.now(); paintTape(b); paintGap(b); paintGapSum(b); paintNums(b); paintBuilt(b); if (view === 'board') paintHeat(b); if (view === 'names') paintNames(b); $$('[data-live=count]').forEach(e => e.textContent = b.count); if (view === 'about' && !numsDone) countNums(); });
   $('#hmCtl').addEventListener('click', e => { const bt = e.target.closest('button'); if (!bt) return; hmMode = bt.dataset.c; $$('#hmCtl button').forEach(x => x.classList.toggle('on', x === bt)); paintHeat(S.board); });
