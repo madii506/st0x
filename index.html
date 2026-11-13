@@ -6,10 +6,10 @@
 <title>ST0X</title>
 <meta name="description" content="st0x is a 24/7 terminal for tokenized stocks on Solana. Live xStocks prices, real charts, the weekend gap, and Jupiter trades you sign in your own wallet.">
 <meta name="theme-color" content="#ffffff">
-<link rel="icon" href="/favicon.ico?v=597098" sizes="any">
-<link rel="icon" href="/favicon.svg?v=597098" type="image/svg+xml">
-<link rel="icon" href="/favicon-32.png?v=597098" sizes="32x32" type="image/png">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=597098">
+<link rel="icon" href="/favicon.ico?v=597974" sizes="any">
+<link rel="icon" href="/favicon.svg?v=597974" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png?v=597974" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=597974">
 <meta property="og:type" content="website">
 <meta property="og:title" content="st0x · wall street never closes">
 <meta property="og:description" content="Wall Street closes at 4pm. st0x doesn't. Trade tokenized stocks 24/7 on Solana.">
@@ -19,67 +19,62 @@
 <meta name="twitter:description" content="Wall Street closes at 4pm. st0x doesn't.">
 <meta name="twitter:image" content="https://st0x.vercel.app/og.png">
 <link rel="preload" href="/assets/fonts/jbmono.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/st0x.css?v=597098">
+<link rel="stylesheet" href="/assets/st0x.css?v=597974">
+<link rel="stylesheet" href="/assets/app.css?v=597974">
 </head>
 <body>
-
-<!-- intro: no words, just the city waking up -->
+<!-- intro: no words. a market, the bell, the city, then the terminal draws itself -->
 <div id="intro" aria-hidden="true"><canvas id="introCv"></canvas><i id="introCur"></i></div>
 
-<div id="prog"></div>
-<header id="nav">
-  <a class="logo" href="#top" aria-label="st0x home">st<b>0</b>x</a>
-  <nav class="links">
-    <a href="#terminal">terminal</a><a href="#week">the week</a><a href="#names">names</a><a href="#board">board</a><a href="#gap">the gap</a><a href="#how">how</a><a href="#faq">faq</a>
-  </nav>
-  <div class="navr">
-    <span class="mk" id="navMk"><i></i><em>nyse</em> <b>—</b></span>
-    <button class="btn sm" id="navWallet">[ connect ]</button>
-  </div>
-</header>
-
-<main id="top">
-
-<!-- hero -->
-<section id="hero">
-  <canvas id="cityCv"></canvas>
-  <div class="hero-in">
-    <h1 class="sr">st0x · wall street closes at 4pm. st0x doesn't.</h1>
-    <p class="status" id="heroStatus"><span class="st nyse"><i></i>nyse <b>—</b> <em></em></span><span class="sep">|</span><span class="st ours"><i></i>st0x <b>open</b> <em>always</em></span></p>
-    <div class="cta"><a class="btn big" href="#terminal">[ open terminal ]</a><a class="btn big ghost" href="#week">[ why 24/7 ]</a><a class="btn big ghost" id="heroBuy" hidden target="_blank" rel="noopener">[ buy $st0x ]</a><a class="btn big ghost" id="heroX" hidden target="_blank" rel="noopener">[ 𝕏 ]</a></div>
-  </div>
-  <div class="scrollhint" aria-hidden="true">scroll<span>↓</span></div>
-</section>
-
-<!-- live tape -->
-<div id="tape" aria-label="live xStocks prices"><div class="tape-run" id="tapeRun"></div></div>
-
-<!-- the week -->
-<section id="week" class="sec">
-  <div class="wk-pin">
-    <div class="sec-h"><span class="idx">01</span><h2 class="scr">the week is 168 hours.</h2></div>
-    <p class="lede"><span id="wkLine">wall street trades <b class="grey">32.5</b> of them.</span></p>
-    <div class="wk-wrap">
-      <div class="wk-days" id="wkDays"></div>
-      <div class="wk-grid" id="wkGrid" aria-label="the 168 hours of a week"></div>
-      <div class="wk-hours" id="wkHours"></div>
+<div id="app">
+  <header class="top">
+    <a class="logo" href="#" aria-label="st0x, replay the intro">st<b>0</b>x</a>
+    <nav class="views" id="views">
+      <button data-v="chart" class="on">terminal</button><button data-v="board">board</button><button data-v="gap">gap</button><button data-v="names">names</button><button data-v="week">week</button><button data-v="about">about</button>
+    </nav>
+    <div class="mkt">
+      <span class="pill" id="pNyse"><i></i><em>nyse</em> <b>—</b> <small></small></span>
+      <span class="pill on"><i></i><em>st0x</em> <b>open</b></span>
+      <span class="sm" id="tbSol">sol —</span><span class="sm" id="tbCount">— stocks</span><span class="sm" id="tbNyse" hidden></span>
+      <a class="pill tokp" id="tokPill" hidden target="_blank" rel="noopener"><b>$st0x</b> <span id="tokPillPx"></span></a>
     </div>
-    <div class="wk-legend">
-      <div class="lg"><i class="g"></i>nyse open<b id="wkNyse">0.0h</b><small id="wkNyseP">0%</small></div>
-      <div class="lg"><i class="o"></i>st0x open<b id="wkOurs">0h</b><small id="wkOursP">0%</small></div>
-      <div class="lg now"><i class="n"></i>you are here<b id="wkNow">—</b><small id="wkNowS"></small></div>
-    </div>
-    <div class="clocks" id="clocks"></div>
-    <p class="wk-hol" id="wkHol"></p>
-    <div class="wk-next" id="wkNext"></div>
-  </div>
-</section>
+    <button class="wbtn" id="tbWallet">[ connect wallet ]</button><button id="navWallet" hidden></button>
+  </header>
+  <div id="tape" aria-label="live xStocks prices"><div class="tape-run" id="tapeRun"></div></div>
 
+  <main class="desk" id="term">
+    <span id="terminal" class="sr"></span>
+    <aside class="wl">
+        <div class="wl-top"><input id="wlQ" placeholder="search nvda, tsla, spy…" autocomplete="off" spellcheck="false"><div class="wl-sort" id="wlSort"><button data-s="liq" class="on">liq</button><button data-s="ch">24h</button><button data-s="gap">gap</button></div></div>
+        <div class="wl-head"><span>stock</span><span>price</span><span>24h</span></div>
+        <div class="wl-list" id="wlList"><div class="empty">loading the board…</div></div>
+      </aside>
+    <section class="center">
+      <div class="view on" data-v="chart">
+<div class="chart">
+        <div class="ch-top">
+          <div class="ch-id"><img id="chIcon" alt=""><div><b id="chSym">—</b><span id="chName"></span></div></div>
+          <div class="ch-px"><b id="chPx">—</b><span id="chCh"></span></div>
+          <div class="ch-tools"><button id="chStar" title="add to favourites">[ ☆ ]</button><button id="chAlert">[ alert ]</button><button id="chShare">[ share ]</button></div>
+          <div class="ch-tf" id="chTf"><button data-tf="15m">15m</button><button data-tf="1h" class="on">1h</button><button data-tf="4h">4h</button><button data-tf="1d">1d</button></div>
+        </div>
+        <div class="ch-meta" id="chMeta"></div>
+        <div class="ch-depth" id="chDepth"></div>
+        <div class="ch-cv"><canvas id="chCv"></canvas><div class="ch-tip" id="chTip"></div><div class="ch-msg" id="chMsg">loading candles…</div></div>
+        <div class="ch-legend"><span><i class="b"></i>nyse closed, still trading on-chain</span><span id="chSrc"></span></div>
+        <div class="bt-tabs" id="btTabs"><button data-p="trades" class="on">trades</button><button data-p="info">info</button><button data-p="depth">depth</button><button data-p="movers">movers</button><button data-p="alerts">alerts <i id="alN"></i></button></div>
+        <div class="bt-pane" id="btPane"><div class="empty">loading…</div></div>
+      </div>
 
-<!-- a weekend on st0x: horizontal scroll -->
-<section id="story">
-  <div class="st-head"><span class="idx">02</span><h2 class="scr">a weekend on st0x.</h2></div>
-  <div class="st-track" id="stTrack">
+      </div>
+      <div class="view" data-v="board"><div class="vh"><b>the board</b><span>every xStock trading on solana right now. size is liquidity, colour is the move. click to open.</span><div class="hm-ctl" id="hmCtl"><button data-c="ch" class="on">24h move</button><button data-c="gap">gap vs share</button></div></div><div class="hm" id="hm"><div class="empty">loading the board…</div></div></div>
+      <div class="view" data-v="gap"><div class="vh"><b>the gap</b><span id="gapLede">what the chain says vs the last price of the real share.</span></div><div class="vb"><div class="gap-sum" id="gapSum"></div><div class="gap-tbl" id="gapTbl"><div class="empty">loading…</div></div><p class="fine">on-chain price from jupiter. reference price is the underlying share as reported by xStocks, with the time it last updated. a positive gap means the token trades above the share.</p></div></div>
+      <div class="view" data-v="names"><div class="vh"><b>the names you know</b><span>real companies and funds, as tokens on solana. live, around the clock.</span></div><div class="vb"><div class="nm-grid" id="nmGrid"><div class="empty">loading…</div></div></div></div>
+      <div class="view" data-v="week"><div class="vh"><b>the week is 168 hours</b><span id="wkLine">wall street trades 32.5 of them.</span></div><div class="vb">
+        <div class="wk-wrap"><div class="wk-days" id="wkDays"></div><div class="wk-grid" id="wkGrid" aria-label="the 168 hours of a week"></div><div class="wk-hours" id="wkHours"></div></div>
+        <div class="wk-legend"><div class="lg"><i class="g"></i>nyse open<b id="wkNyse">0.0h</b><small id="wkNyseP">0%</small></div><div class="lg"><i class="o"></i>st0x open<b id="wkOurs">0h</b><small id="wkOursP">0%</small></div><div class="lg now"><i class="n"></i>you are here<b id="wkNow">—</b><small id="wkNowS"></small></div></div>
+        <div class="clocks" id="clocks"></div><p class="wk-hol" id="wkHol"></p><div class="wk-next" id="wkNext"></div>
+        <div class="st-mini"><div class="st-track" id="stTrack">
     <article class="sp"><div class="sp-t"><span>fri</span>16:00</div><pre class="sp-a">  ┌───┐
   │ ! │  ding.
   └─┬─┘
@@ -99,102 +94,22 @@
   │ ✓ │  ding.
   └─┬─┘
  ───┴───</pre><b>nyse wakes up.</b><p>to a price you already traded. see you at 4pm.</p><div class="sp-st"><i class="g"></i>nyse open <i class="o"></i>st0x open</div></article>
+  </div></div>
+      </div></div>
+      <div class="view" data-v="about"><div class="vb about">
+        <div class="ab-hero"><canvas id="cityCv"></canvas><div class="ab-h"><b>wall street closes at 4pm. st<i>0</i>x doesn't.</b><span>a 24/7 terminal for tokenized stocks on solana. you sign every trade; st0x never holds funds.</span></div></div>
+        <div class="nums"><div class="num"><b data-n="count">—</b><span>xStocks trading now</span></div><div class="num"><b data-n="liq">—</b><span>on-chain liquidity</span></div><div class="num"><b data-n="vol">—</b><span>traded in 24h</span></div><div class="num"><b>168h</b><span>open per week · nyse: 32.5h</span></div></div>
+        <div class="built" id="built">
+    <span class="bl-h">built on</span>
+    <span class="bl"><svg class="bl-svg" fill="currentColor" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m23.8764 18.0313-3.962 4.1393a.9201.9201 0 0 1-.306.2106.9407.9407 0 0 1-.367.0742H.4599a.4689.4689 0 0 1-.2522-.0733.4513.4513 0 0 1-.1696-.1962.4375.4375 0 0 1-.0314-.2545.4438.4438 0 0 1 .117-.2298l3.9649-4.1393a.92.92 0 0 1 .3052-.2102.9407.9407 0 0 1 .3658-.0746H23.54a.4692.4692 0 0 1 .2523.0734.4531.4531 0 0 1 .1697.196.438.438 0 0 1 .0313.2547.4442.4442 0 0 1-.1169.2297zm-3.962-8.3355a.9202.9202 0 0 0-.306-.2106.941.941 0 0 0-.367-.0742H.4599a.4687.4687 0 0 0-.2522.0734.4513.4513 0 0 0-.1696.1961.4376.4376 0 0 0-.0314.2546.444.444 0 0 0 .117.2297l3.9649 4.1394a.9204.9204 0 0 0 .3052.2102c.1154.049.24.0744.3658.0746H23.54a.469.469 0 0 0 .2523-.0734.453.453 0 0 0 .1697-.1961.4382.4382 0 0 0 .0313-.2546.4444.4444 0 0 0-.1169-.2297zM.46 6.7225h18.7815a.9411.9411 0 0 0 .367-.0742.9202.9202 0 0 0 .306-.2106l3.962-4.1394a.4442.4442 0 0 0 .117-.2297.4378.4378 0 0 0-.0314-.2546.453.453 0 0 0-.1697-.196.469.469 0 0 0-.2523-.0734H4.7596a.941.941 0 0 0-.3658.0745.9203.9203 0 0 0-.3052.2102L.1246 5.9687a.4438.4438 0 0 0-.1169.2295.4375.4375 0 0 0 .0312.2544.4512.4512 0 0 0 .1692.196.4689.4689 0 0 0 .2518.0739z"/></svg>solana</span>
+    <span class="bl"><img data-brand="jupiter" alt="">jupiter</span>
+    <span class="bl"><img data-brand="pyth" alt="">pyth</span>
+    <span class="bl"><b class="bx">x</b>xStocks</span>
+    <span class="bl"><b class="bx">gt</b>geckoterminal</span>
+    <span class="bl"><b class="bx">ph</b>phantom · solflare · backpack</span>
   </div>
-  <div class="st-bar"><i id="stBar"></i></div>
-</section>
-
-<!-- the terminal -->
-<section id="terminal" class="sec">
-  <div class="sec-h"><span class="idx">03</span><h2 class="scr">the terminal.</h2></div>
-  <p class="lede">real xStocks, real prices, real charts. you sign every trade in your own wallet.</p>
-
-  <div class="term" id="term">
-    <div class="tbar">
-      <span class="tb-l"><b>st0x</b>://terminal</span>
-      <span class="tb-m"><span class="live"><i></i>live</span><span id="tbSol">sol —</span><span id="tbNyse">nyse —</span><span id="tbCount">— stocks</span></span>
-      <button class="tb-w" id="tbWallet">[ connect wallet ]</button>
-    </div>
-    <div class="tgrid">
-      <aside class="wl">
-        <div class="wl-top"><input id="wlQ" placeholder="search nvda, tsla, spy…" autocomplete="off" spellcheck="false"><div class="wl-sort" id="wlSort"><button data-s="liq" class="on">liq</button><button data-s="ch">24h</button><button data-s="gap">gap</button></div></div>
-        <div class="wl-head"><span>stock</span><span>price</span><span>24h</span></div>
-        <div class="wl-list" id="wlList"><div class="empty">loading the board…</div></div>
-      </aside>
-      <div class="chart">
-        <div class="ch-top">
-          <div class="ch-id"><img id="chIcon" alt=""><div><b id="chSym">—</b><span id="chName"></span></div></div>
-          <div class="ch-px"><b id="chPx">—</b><span id="chCh"></span></div>
-          <div class="ch-tools"><button id="chStar" title="add to favourites">[ ☆ ]</button><button id="chAlert">[ alert ]</button><button id="chShare">[ share ]</button></div>
-          <div class="ch-tf" id="chTf"><button data-tf="15m">15m</button><button data-tf="1h" class="on">1h</button><button data-tf="4h">4h</button><button data-tf="1d">1d</button></div>
-        </div>
-        <div class="ch-meta" id="chMeta"></div>
-        <div class="ch-depth" id="chDepth"></div>
-        <div class="ch-cv"><canvas id="chCv"></canvas><div class="ch-tip" id="chTip"></div><div class="ch-msg" id="chMsg">loading candles…</div></div>
-        <div class="ch-legend"><span><i class="b"></i>nyse closed, still trading on-chain</span><span id="chSrc"></span></div>
-        <div class="bt-tabs" id="btTabs"><button data-p="trades" class="on">trades</button><button data-p="info">info</button><button data-p="depth">depth</button><button data-p="movers">movers</button><button data-p="alerts">alerts <i id="alN"></i></button></div>
-        <div class="bt-pane" id="btPane"><div class="empty">loading…</div></div>
-      </div>
-      <aside class="tk">
-        <div class="tk-side" id="tkSide"><button data-side="buy" class="on">buy</button><button data-side="sell">sell</button></div>
-        <div class="tk-type" id="tkType"><button data-t="market" class="on">market</button><button data-t="limit">limit</button></div>
-        <label class="tk-l"><span id="tkPayL">you pay</span><span class="bal" id="tkBal"></span></label>
-        <div class="tk-in"><input id="tkAmt" inputmode="decimal" placeholder="0.0" autocomplete="off"><button id="tkUnit">SOL</button></div>
-        <div id="tkLim" hidden><label class="tk-l"><span>limit price per share</span><span class="bal" id="tkLimNow"></span></label><div class="tk-in"><input id="tkLimPx" inputmode="decimal" placeholder="0.00" autocomplete="off"><button tabindex="-1">USD</button></div></div>
-        <div class="tk-pct" id="tkPct"><button data-p="25">25%</button><button data-p="50">50%</button><button data-p="100">max</button></div>
-        <label class="tk-l"><span>you get</span><span class="bal" id="tkGetUsd"></span></label>
-        <div class="tk-out" id="tkOut">—</div>
-        <dl class="tk-q" id="tkQ">
-          <div><dt>price</dt><dd id="qPx">—</dd></div>
-          <div><dt>vs board</dt><dd id="qVs">—</dd></div>
-          <div><dt>impact</dt><dd id="qImp">—</dd></div>
-          <div><dt>min received</dt><dd id="qMin">—</dd></div>
-          <div><dt>route</dt><dd id="qRoute">—</dd></div>
-          <div><dt>slippage</dt><dd><span class="slip" id="qSlip"><button data-b="50">0.5%</button><button data-b="100" class="on">1%</button><button data-b="200">2%</button></span></dd></div>
-        </dl>
-        <button class="btn go" id="tkGo" disabled>[ enter an amount ]</button>
-        <p class="tk-note" id="tkNote">jupiter finds the route. your wallet signs. st0x never holds funds.</p>
-      </aside>
-    </div>
-    <div class="con" id="con">
-      <div class="con-log" id="conLog"></div>
-      <div class="con-in"><span class="pr">st0x&gt;</span><input id="conIn" autocomplete="off" spellcheck="false" placeholder="type help, or try: buy nvda 0.1 sol · alert tsla > 400 · share"><span class="con-hint" id="conHint"></span></div>
-    </div>
-    <div class="od" id="od" hidden><div class="pf-h"><b>open limit orders</b><span id="odN"></span></div><div class="od-list" id="odList"></div></div>
-    <div class="pf" id="pf" hidden><div class="pf-h"><b>your bag</b><span id="pfTot"></span></div><div class="pf-list" id="pfList"></div></div>
-  </div>
-</section>
-
-
-
-<!-- the names: real company logos, live prices -->
-<section id="names" class="sec">
-  <div class="sec-h"><span class="idx">04</span><h2 class="scr">the names you know.</h2></div>
-  <p class="lede">the biggest companies and funds on earth, as tokens on solana. live prices, around the clock.</p>
-  <div class="nm-grid" id="nmGrid"><div class="empty">loading…</div></div>
-</section>
-
-<div class="band" aria-hidden="true"><div class="band-run" id="band1"><span>wall street closes at 4pm</span><b>·</b><span>st<em>0</em>x doesn't</span><b>·</b><span>wall street closes at 4pm</span><b>·</b><span>st<em>0</em>x doesn't</span><b>·</b></div></div>
-<!-- the board: heatmap -->
-<section id="board" class="sec">
-  <div class="sec-h"><span class="idx">05</span><h2 class="scr">the board.</h2></div>
-  <p class="lede">every xStock that trades on solana right now. size is liquidity, colour is the move. tap one to open it in the terminal.</p>
-  <div class="hm-ctl" id="hmCtl"><button data-c="ch" class="on">24h move</button><button data-c="gap">gap vs share</button></div>
-  <div class="hm" id="hm"><div class="empty">loading the board…</div></div>
-</section>
-
-<!-- the gap -->
-<section id="gap" class="sec">
-  <div class="sec-h"><span class="idx">06</span><h2 class="scr">the gap.</h2></div>
-  <p class="lede" id="gapLede">what the chain says vs the last price of the real share.</p>
-  <div class="gap-sum" id="gapSum"></div>
-  <div class="gap-tbl" id="gapTbl"><div class="empty">loading…</div></div>
-  <p class="fine">on-chain price from jupiter. reference price is the underlying share as reported by xStocks, with the time it was last updated. a positive gap means the token trades above the share.</p>
-</section>
-
-<!-- how it works -->
-<section id="how" class="sec">
-  <div class="sec-h"><span class="idx">07</span><h2 class="scr">how it works.</h2></div>
-  <div class="flow" id="flow">
+        <h3>how it works</h3>
+        <div class="flow" id="flow">
     <div class="fnode"><pre class="fart">┌──────────┐
 │  NVDA    │
 │  ▓▓▓▓▓▓  │
@@ -215,43 +130,19 @@
  │ >_   │
  └──────┘</pre><b>your wallet</b><p>st0x asks jupiter for the best route and hands you the transaction. you sign it. nobody else touches your funds.</p></div>
   </div>
-</section>
-
-<!-- live numbers -->
-<section id="nums" class="sec">
-  <div class="nums">
-    <div class="num"><b data-n="count">—</b><span>xStocks trading now</span></div>
-    <div class="num"><b data-n="liq">—</b><span>on-chain liquidity</span></div>
-    <div class="num"><b data-n="vol">—</b><span>traded in 24h</span></div>
-    <div class="num"><b>168h</b><span>open per week · nyse: 32.5h</span></div>
-  </div>
-  <div class="built" id="built">
-    <span class="bl-h">built on</span>
-    <span class="bl"><svg class="bl-svg" fill="currentColor" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m23.8764 18.0313-3.962 4.1393a.9201.9201 0 0 1-.306.2106.9407.9407 0 0 1-.367.0742H.4599a.4689.4689 0 0 1-.2522-.0733.4513.4513 0 0 1-.1696-.1962.4375.4375 0 0 1-.0314-.2545.4438.4438 0 0 1 .117-.2298l3.9649-4.1393a.92.92 0 0 1 .3052-.2102.9407.9407 0 0 1 .3658-.0746H23.54a.4692.4692 0 0 1 .2523.0734.4531.4531 0 0 1 .1697.196.438.438 0 0 1 .0313.2547.4442.4442 0 0 1-.1169.2297zm-3.962-8.3355a.9202.9202 0 0 0-.306-.2106.941.941 0 0 0-.367-.0742H.4599a.4687.4687 0 0 0-.2522.0734.4513.4513 0 0 0-.1696.1961.4376.4376 0 0 0-.0314.2546.444.444 0 0 0 .117.2297l3.9649 4.1394a.9204.9204 0 0 0 .3052.2102c.1154.049.24.0744.3658.0746H23.54a.469.469 0 0 0 .2523-.0734.453.453 0 0 0 .1697-.1961.4382.4382 0 0 0 .0313-.2546.4444.4444 0 0 0-.1169-.2297zM.46 6.7225h18.7815a.9411.9411 0 0 0 .367-.0742.9202.9202 0 0 0 .306-.2106l3.962-4.1394a.4442.4442 0 0 0 .117-.2297.4378.4378 0 0 0-.0314-.2546.453.453 0 0 0-.1697-.196.469.469 0 0 0-.2523-.0734H4.7596a.941.941 0 0 0-.3658.0745.9203.9203 0 0 0-.3052.2102L.1246 5.9687a.4438.4438 0 0 0-.1169.2295.4375.4375 0 0 0 .0312.2544.4512.4512 0 0 0 .1692.196.4689.4689 0 0 0 .2518.0739z"/></svg>solana</span>
-    <span class="bl"><img data-brand="jupiter" alt="">jupiter</span>
-    <span class="bl"><img data-brand="pyth" alt="">pyth</span>
-    <span class="bl"><b class="bx">x</b>xStocks</span>
-    <span class="bl"><b class="bx">gt</b>geckoterminal</span>
-    <span class="bl"><b class="bx">ph</b>phantom · solflare · backpack</span>
-  </div>
-</section>
-
-
-<!-- get started -->
-<section id="start" class="sec">
-  <div class="sec-h"><span class="idx">08</span><h2 class="scr">start in a minute.</h2></div>
-  <div class="steps">
+        <h3>start in a minute</h3>
+        <div class="steps">
     <div class="stp"><span class="sn">1</span><b>get a solana wallet</b><p>phantom, solflare or backpack. free, two minutes, you hold the keys.</p><div class="wl-logos"><span>phantom</span><span>solflare</span><span>backpack</span></div></div>
     <div class="stp"><span class="sn">2</span><b>add SOL or USDC</b><p>buy it in the wallet or send it from an exchange. SOL pays the tiny network fees.</p><div class="wl-logos"><span class="sol">◎ SOL</span><span>$ USDC</span></div></div>
     <div class="stp"><span class="sn">3</span><b>open the terminal</b><p>connect, type <code>buy nvda 0.1</code>, approve it in your wallet. done, at any hour.</p><a class="btn sm" href="#terminal">[ open terminal ]</a></div>
   </div>
-</section>
-
-<div class="band alt" aria-hidden="true"><div class="band-run" id="band2"><span>nvda at 3am</span><b>·</b><span>tsla on a sunday</span><b>·</b><span>spy on christmas</span><b>·</b><span>nvda at 3am</span><b>·</b><span>tsla on a sunday</span><b>·</b><span>spy on christmas</span><b>·</b></div></div>
-<!-- risks -->
-<section id="risk" class="sec">
-  <div class="sec-h"><span class="idx">09</span><h2 class="scr">read this first.</h2></div>
-  <div class="risks">
+        <h3 id="tokH" hidden>$st0x</h3><div id="token" hidden><div class="tok">
+    <div class="tok-ca"><span>ca</span><code id="tokCa"></code><button class="btn sm" id="tokCopy">[ copy ]</button></div>
+    <div class="tok-st"><div><b id="tokPx">—</b><span>price</span></div><div><b id="tokMc">—</b><span>market cap</span></div><div><b id="tokCh">—</b><span>24h</span></div></div>
+    <div class="cta"><a class="btn big" id="tokBuy" target="_blank" rel="noopener">[ buy on pump.fun ]</a><a class="btn big ghost" id="tokChart" target="_blank" rel="noopener">[ chart ]</a><a class="btn big ghost" id="tokX" hidden target="_blank" rel="noopener">[ 𝕏 ]</a></div>
+  </div></div>
+        <h3>read this first</h3>
+        <div class="risks">
     <div class="rk"><b>not the share itself</b><p>an xStock tracks the share 1:1 but gives no voting rights and no legal claim on the company.</p></div>
     <div class="rk"><b>not for everyone</b><p>xStocks are not offered to US persons, and not in the UK, Canada or Australia among others. check what applies where you live.</p></div>
     <div class="rk"><b>weekends move</b><p>when nyse is shut, the token can drift from friday's close. it tends to pull back toward the real price when the market reopens.</p></div>
@@ -259,22 +150,8 @@
     <div class="rk"><b>independent front end</b><p>st0x is not affiliated with Backed, Kraken, NYSE or any listed company. it never holds your funds and adds no fee.</p></div>
     <div class="rk"><b>no advice</b><p>nothing here is financial advice. it's a terminal. what you do with it is up to you.</p></div>
   </div>
-</section>
-
-<!-- the token (shown only once it exists) -->
-<section id="token" class="sec" hidden>
-  <div class="sec-h"><span class="idx">10</span><h2 class="scr">$st0x.</h2></div>
-  <div class="tok">
-    <div class="tok-ca"><span>ca</span><code id="tokCa"></code><button class="btn sm" id="tokCopy">[ copy ]</button></div>
-    <div class="tok-st"><div><b id="tokPx">—</b><span>price</span></div><div><b id="tokMc">—</b><span>market cap</span></div><div><b id="tokCh">—</b><span>24h</span></div></div>
-    <div class="cta"><a class="btn big" id="tokBuy" target="_blank" rel="noopener">[ buy on pump.fun ]</a><a class="btn big ghost" id="tokChart" target="_blank" rel="noopener">[ chart ]</a><a class="btn big ghost" id="tokX" hidden target="_blank" rel="noopener">[ 𝕏 ]</a></div>
-  </div>
-</section>
-
-<!-- faq -->
-<section id="faq" class="sec">
-  <div class="sec-h"><span class="idx" id="faqIdx">10</span><h2 class="scr">faq.</h2></div>
-  <div class="faq" id="faqList">
+        <h3>faq</h3>
+        <div class="faq" id="faqList">
     <details><summary>what is st0x?</summary><p>a terminal for trading tokenized stocks (xStocks) on solana, any hour, any day. live prices, real charts, and trades routed through jupiter that you sign yourself.</p></details>
     <details><summary>is this the real stock?</summary><p>each xStock is a token backed 1:1 by the underlying share, issued by Backed and held with custodians. it follows the price of the share, but carries no voting rights or legal claim on the company.</p></details>
     <details><summary>what happens on weekends?</summary><p>on-chain markets keep trading. with no official price coming in, the token can move away from friday's close. when nyse reopens, it usually snaps back toward the real price. the gap section shows this live.</p></details>
@@ -287,22 +164,54 @@
     <details><summary>do alerts work when i close the tab?</summary><p>no. alerts live in this browser and fire while the page is open. limit orders are the thing that works while you sleep.</p></details>
     <details><summary>what about dividends?</summary><p>they're reinvested automatically: your xStock balance grows to reflect the payout, net of withholding tax.</p></details>
   </div>
-</section>
+        <pre class="wm" id="footWm" aria-label="st0x"></pre>
+      </div></div>
+    </section>
+    <aside class="side">
+      <aside class="tk">
+        <div class="tk-side" id="tkSide"><button data-side="buy" class="on">buy</button><button data-side="sell">sell</button></div>
+        <div class="tk-type" id="tkType"><button data-t="market" class="on">market</button><button data-t="limit">limit</button></div>
+        <label class="tk-l"><span id="tkPayL">you pay</span><span class="bal" id="tkBal"></span></label>
+        <div class="tk-in"><input id="tkAmt" inputmode="decimal" placeholder="0.0" autocomplete="off"><button id="tkUnit">SOL</button></div>
+        <div id="tkLim" hidden><label class="tk-l"><span>limit price per share</span><span class="bal" id="tkLimNow"></span></label><div class="tk-in"><input id="tkLimPx" inputmode="decimal" placeholder="0.00" autocomplete="off"><button tabindex="-1">USD</button></div></div>
+        <div class="tk-pct" id="tkPct"><button data-p="25">25%</button><button data-p="50">50%</button><button data-p="100">max</button></div>
+        <label class="tk-l"><span>you get</span><span class="bal" id="tkGetUsd"></span></label>
+        <div class="tk-out" id="tkOut">—</div>
+        <dl class="tk-q" id="tkQ">
+          <div><dt>price</dt><dd id="qPx">—</dd></div>
+          <div><dt>vs board</dt><dd id="qVs">—</dd></div>
+          <div><dt>impact</dt><dd id="qImp">—</dd></div>
+          <div><dt>min received</dt><dd id="qMin">—</dd></div>
+          <div><dt>route</dt><dd id="qRoute">—</dd></div>
+          <div><dt>slippage</dt><dd><span class="slip" id="qSlip"><button data-b="50">0.5%</button><button data-b="100" class="on">1%</button><button data-b="200">2%</button></span></dd></div>
+        </dl>
+        <button class="btn go" id="tkGo" disabled>[ enter an amount ]</button>
+        <p class="tk-note" id="tkNote">jupiter finds the route. your wallet signs. st0x never holds funds.</p>
+      </aside>
+      <div class="od" id="od" hidden><div class="pf-h"><b>open limit orders</b><span id="odN"></span></div><div class="od-list" id="odList"></div></div>
+    
+      <div class="pf" id="pf" hidden><div class="pf-h"><b>your bag</b><span id="pfTot"></span></div><div class="pf-list" id="pfList"></div></div>
+    </aside>
+  </main>
 
-</main>
-
-<footer id="foot"><pre class="wm" id="footWm" aria-label="st0x"></pre></footer>
+  <footer class="dock">
+    <div class="con" id="con">
+      <div class="con-log" id="conLog"></div>
+      <div class="con-in"><span class="pr">st0x&gt;</span><input id="conIn" autocomplete="off" spellcheck="false" placeholder="type help · buy nvda 0.1 · limit buy tsla 50 @ 380 · alert spy > 760 · gap · since"><span class="con-hint" id="conHint"></span></div>
+    </div>
+    <div class="sbar" id="sbar"><span class="live"><i></i>live</span><span id="sbUpd">board —</span><span id="sbNyse"></span><span id="sbClock"></span><span class="keys">/ search · b s side · 1–4 timeframe · ⌘k console · click logo to replay intro</span></div>
+  </footer>
+  <nav class="mnav" id="mnav"><button data-m="list">list</button><button data-m="chart" class="on">chart</button><button data-m="trade">trade</button><button data-m="console">console</button></nav>
+</div>
 
 <!-- wallet picker -->
 <div class="modal" id="wm" hidden><div class="mbox"><div class="mh"><b>connect a wallet</b><button id="wmX">[ x ]</button></div><div class="mlist" id="wmList"></div><p class="fine">st0x only reads your public address. trades still need your approval in the wallet.</p></div></div>
 <div class="toast" id="toast"></div>
 
 <script src="/assets/vendor/gsap.min.js"></script>
-<script src="/assets/vendor/ScrollTrigger.min.js"></script>
-<script src="/assets/vendor/lenis.min.js"></script>
 <script src="/assets/vendor/web3.min.js" defer></script>
-<script src="/assets/city.js?v=597098"></script>
-<script src="/assets/term.js?v=597098"></script>
-<script src="/assets/st0x.js?v=597098"></script>
+<script src="/assets/city.js?v=597974"></script>
+<script src="/assets/term.js?v=597974"></script>
+<script src="/assets/app.js?v=597974"></script>
 </body>
 </html>
