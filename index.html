@@ -6,10 +6,10 @@
 <title>ST0X</title>
 <meta name="description" content="st0x is a 24/7 terminal for tokenized stocks on Solana. Live xStocks prices, real charts, the weekend gap, and Jupiter trades you sign in your own wallet.">
 <meta name="theme-color" content="#ffffff">
-<link rel="icon" href="/favicon.ico?v=597974" sizes="any">
-<link rel="icon" href="/favicon.svg?v=597974" type="image/svg+xml">
-<link rel="icon" href="/favicon-32.png?v=597974" sizes="32x32" type="image/png">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=597974">
+<link rel="icon" href="/favicon.ico?v=598766" sizes="any">
+<link rel="icon" href="/favicon.svg?v=598766" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png?v=598766" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=598766">
 <meta property="og:type" content="website">
 <meta property="og:title" content="st0x · wall street never closes">
 <meta property="og:description" content="Wall Street closes at 4pm. st0x doesn't. Trade tokenized stocks 24/7 on Solana.">
@@ -19,8 +19,8 @@
 <meta name="twitter:description" content="Wall Street closes at 4pm. st0x doesn't.">
 <meta name="twitter:image" content="https://st0x.vercel.app/og.png">
 <link rel="preload" href="/assets/fonts/jbmono.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/st0x.css?v=597974">
-<link rel="stylesheet" href="/assets/app.css?v=597974">
+<link rel="stylesheet" href="/assets/st0x.css?v=598766">
+<link rel="stylesheet" href="/assets/app.css?v=598766">
 </head>
 <body>
 <!-- intro: no words. a market, the bell, the city, then the terminal draws itself -->
@@ -34,8 +34,7 @@
     </nav>
     <div class="mkt">
       <span class="pill" id="pNyse"><i></i><em>nyse</em> <b>—</b> <small></small></span>
-      <span class="pill on"><i></i><em>st0x</em> <b>open</b></span>
-      <span class="sm" id="tbSol">sol —</span><span class="sm" id="tbCount">— stocks</span><span class="sm" id="tbNyse" hidden></span>
+      <span class="pill on"><i></i><em>st0x</em> <b>open 24/7</b></span><span class="sm" id="tbNyse" hidden></span>
       <a class="pill tokp" id="tokPill" hidden target="_blank" rel="noopener"><b>$st0x</b> <span id="tokPillPx"></span></a>
     </div>
     <button class="wbtn" id="tbWallet">[ connect wallet ]</button><button id="navWallet" hidden></button>
@@ -55,7 +54,7 @@
         <div class="ch-top">
           <div class="ch-id"><img id="chIcon" alt=""><div><b id="chSym">—</b><span id="chName"></span></div></div>
           <div class="ch-px"><b id="chPx">—</b><span id="chCh"></span></div>
-          <div class="ch-tools"><button id="chStar" title="add to favourites">[ ☆ ]</button><button id="chAlert">[ alert ]</button><button id="chShare">[ share ]</button></div>
+          <div class="ch-tools"><button id="chStar" title="add to favourites">☆</button><button id="chAlert" title="price alert">alert</button><button id="chShare" title="share card">share</button></div>
           <div class="ch-tf" id="chTf"><button data-tf="15m">15m</button><button data-tf="1h" class="on">1h</button><button data-tf="4h">4h</button><button data-tf="1d">1d</button></div>
         </div>
         <div class="ch-meta" id="chMeta"></div>
@@ -196,10 +195,11 @@
 
   <footer class="dock">
     <div class="con" id="con">
+      <button class="con-t" id="conT" title="show or hide the log">log</button>
       <div class="con-log" id="conLog"></div>
       <div class="con-in"><span class="pr">st0x&gt;</span><input id="conIn" autocomplete="off" spellcheck="false" placeholder="type help · buy nvda 0.1 · limit buy tsla 50 @ 380 · alert spy > 760 · gap · since"><span class="con-hint" id="conHint"></span></div>
     </div>
-    <div class="sbar" id="sbar"><span class="live"><i></i>live</span><span id="sbUpd">board —</span><span id="sbNyse"></span><span id="sbClock"></span><span class="keys">/ search · b s side · 1–4 timeframe · ⌘k console · click logo to replay intro</span></div>
+    <div class="sbar" id="sbar"><span class="live"><i></i>live</span><span id="tbSol">sol —</span><span id="tbCount">— stocks</span><span id="sbUpd">board —</span><span id="sbNyse"></span><span id="sbClock"></span><span class="keys">/ search · b s side · 1–4 timeframe · ⌘k console · click logo to replay intro</span></div>
   </footer>
   <nav class="mnav" id="mnav"><button data-m="list">list</button><button data-m="chart" class="on">chart</button><button data-m="trade">trade</button><button data-m="console">console</button></nav>
 </div>
@@ -210,8 +210,9 @@
 
 <script src="/assets/vendor/gsap.min.js"></script>
 <script src="/assets/vendor/web3.min.js" defer></script>
-<script src="/assets/city.js?v=597974"></script>
-<script src="/assets/term.js?v=597974"></script>
-<script src="/assets/app.js?v=597974"></script>
+<script src="/assets/city.js?v=598766"></script>
+<script src="/assets/intro.js?v=598766"></script>
+<script src="/assets/term.js?v=598766"></script>
+<script src="/assets/app.js?v=598766"></script>
 </body>
 </html>
