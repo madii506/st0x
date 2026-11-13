@@ -132,8 +132,8 @@
     addEventListener('pointerdown', skip); addEventListener('keydown', skip);
     // the overlay only paints the canvas (the page behind is white); the app, clipped to nothing, opens out of the cursor at the end
     o.style.background = 'transparent';
-    try { run = Intro.play({ canvas: cv, cursor: cur, app, onDone: fin }); } catch (e) { console.error(e); app.style.clipPath = ''; fin(); return; }
-    setTimeout(() => { if (playing && !document.hidden) run.finish(); }, 11000); }
+    try { run = Intro.play({ canvas: cv, cursor: cur, app, onDone: fin }); } catch (e) { console.error(e); app.style.clipPath = ''; app.style.transform = ''; fin(); return; }
+    setTimeout(() => { if (playing && !document.hidden) run.finish(); }, 14000); }
   $('.logo').addEventListener('click', e => { e.preventDefault(); playIntro(); });
 
   // ---------------------------------------------------------------- go

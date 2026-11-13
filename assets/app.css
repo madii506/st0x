@@ -179,3 +179,4 @@ body{font-size:14px}
 .dock .con-log{position:absolute;left:0;right:0;bottom:100%;z-index:6;background:#fff;border-top:0 solid var(--line)}
 .dock.open .con-log{border-top-width:1px;box-shadow:0 -14px 34px rgba(13,15,14,.08)}
 @media (max-width:900px){.dock .con-log{position:static;box-shadow:none}}
+.top .logo{display:inline-flex;align-items:center;gap:8px}.top .logo .lg{width:28px;height:28px;flex:none;transition:transform .25s}.top .logo:hover .lg{transform:translateY(-1px) rotate(-4deg)}
