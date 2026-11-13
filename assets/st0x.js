@@ -29,9 +29,7 @@
   function buildCity() { const W = hero.clientWidth, H = hero.clientHeight; lastW = W; lastH = H; G = City.build(W, H, fsFor(W), heroFade()); if (stopLive) stopLive(); stopLive = City.live(cityCv, G); return G; }
   addEventListener('resize', () => { clearTimeout(buildCity.t); buildCity.t = setTimeout(() => { if (!G) return; const W = hero.clientWidth, H = hero.clientHeight; if (W !== lastW || Math.abs(H - lastH) > 140) buildCity(); }, 250); });
 
-  function heroIn(fast) { const l1 = $('#h1 .l1'), l2 = $('#h1 .l2'); l1.style.visibility = l2.style.visibility = 'hidden';
-    decode(l1, fast ? 500 : 800, 0); decode(l2, fast ? 450 : 650, fast ? 250 : 520);
-    gsap.fromTo(['#heroStatus', '.hero-in .cta', '.scrollhint'], { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: .9, ease: 'power3.out', stagger: .1, delay: fast ? .35 : .9 }); }
+  function heroIn(fast) { gsap.fromTo(['#heroStatus .st', '.hero-in .cta .btn', '.scrollhint'], { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: .8, ease: 'power3.out', stagger: .08, delay: fast ? .25 : .35 }); }
 
   async function boot() {
     try { await document.fonts.load('600 12px JB'); } catch { }
@@ -41,14 +39,15 @@
     const icv = $('#introCv'), cur = $('#introCur'), g = City.build(innerWidth, hero.clientHeight || innerHeight, fsFor(innerWidth), heroFade());
     let blink = gsap.to(cur, { opacity: 0, duration: .01, repeat: 3, yoyo: true, repeatDelay: .13, ease: 'none' });
     let finished = false; const end = () => { if (finished) return; finished = true; try { sessionStorage.setItem('st0x-intro', '1'); } catch { }
-      blink.kill(); gsap.set(cur, { opacity: 1 }); const tgt = $('#h1Cur').getBoundingClientRect(), now = cur.getBoundingClientRect();
-      // the cursor flies into the headline and becomes its cursor
+      blink.kill(); gsap.set(cur, { opacity: 1 }); const tgt = $('#heroStatus .ours i').getBoundingClientRect(), now = cur.getBoundingClientRect();
+      // the cursor flies down into the 'st0x open' light
       const tl = gsap.timeline({ onComplete: () => { $('#intro').remove(); document.body.classList.remove('locked'); lenis && lenis.start(); ScrollTrigger.refresh(); } });
       tl.to(icv, { filter: 'blur(1.1px)', duration: .55, ease: 'power2.inOut' }, 0)
         .to(cur, { x: tgt.left + tgt.width / 2 - (now.left + now.width / 2), y: tgt.top + tgt.height / 2 - (now.top + now.height / 2), scaleX: tgt.width / now.width, scaleY: tgt.height / now.height, duration: .75, ease: 'expo.inOut' }, .05)
         .add(() => heroIn(false), .45)
         .to('#intro', { backgroundColor: 'rgba(255,255,255,0)', duration: .5 }, .35).to(icv, { opacity: 0, duration: .45 }, .55).to(cur, { opacity: 0, duration: .15 }, .8); };
-    const run = City.intro(icv, g, end, cur);
+    if (document.hidden) { end(); return; }
+    const run = City.intro(icv, g, end, cur); setTimeout(end, run.end() + 2500);
     const skip = () => { run.skip(); }; ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(ev => addEventListener(ev, skip, { once: true, passive: true }));
   }
 
@@ -101,8 +100,16 @@
     const R = squarify(L.map(s => Math.pow(s.liq, .62)), 0, 0, W, H), cap = hmMode === 'ch' ? 4 : 1.2;
     box.innerHTML = L.map((s, i) => { const [x, y, w, h] = R[i], v = hmMode === 'ch' ? s.ch24 : s.gap, t = v == null ? 0 : Math.min(1, Math.abs(v) / cap), bg = v == null ? '#eef1ef' : v >= 0 ? mix('#f1fbf5', '#0f8f46', t) : mix('#fdf0f0', '#c42424', t), fg = t > .55 ? '#fff' : '#0d0f0e';
       const c = w < 44 || h < 24 ? 'xs' : w < 86 || h < 52 ? 'sm' : '';
-      return `<div class="ht ${c}" data-m="${s.mint}" style="left:${(x / W * 100).toFixed(3)}%;top:${(y / H * 100).toFixed(3)}%;width:${(w / W * 100).toFixed(3)}%;height:${(h / H * 100).toFixed(3)}%;background:${bg};color:${fg}" title="${esc(s.tok)} ${usd(s.usd)} ${pct(v)}"><b>${esc(s.tok)}</b><span><em>${pct(v)}</em><br><small>${usd(s.usd)} · ${big(s.liq)}</small></span></div>`; }).join('');
+      return `<div class="ht ${c}" data-m="${s.mint}" style="left:${(x / W * 100).toFixed(3)}%;top:${(y / H * 100).toFixed(3)}%;width:${(w / W * 100).toFixed(3)}%;height:${(h / H * 100).toFixed(3)}%;background:${bg};color:${fg}" title="${esc(s.tok)} ${usd(s.usd)} ${pct(v)}"><span class="hl"><img src="${esc(s.icon)}" alt="" loading="lazy" onerror="this.remove()"><b>${esc(s.tok)}</b></span><span><em>${pct(v)}</em><br><small>${usd(s.usd)} · ${big(s.liq)}</small></span></div>`; }).join('');
     if (!hmDone && ScrollTrigger.isInViewport(box, .2)) { hmDone = true; gsap.from('#hm .ht', { opacity: 0, scale: .7, duration: .6, ease: 'back.out(1.6)', stagger: { each: .012 } }); } }
+
+
+  // ---------------------------------------------------------------- the names: a wall of real company logos with live prices
+  let nmDone = false;
+  function paintNames(b) { const g = $('#nmGrid'); if (!g) return; const L = b.stocks.slice(0, 36);
+    g.innerHTML = L.map(s => `<button class="nmc" data-m="${s.mint}"><img src="${esc(s.icon)}" alt="${esc(s.name)} logo" loading="lazy" onerror="this.style.visibility='hidden'"><span class="t"><b>${esc(s.tok)}</b><small>${esc(s.name)}</small></span><span class="p"><b>${usd(s.usd)}</b><span class="${cls(s.ch24)}">${pct(s.ch24)}</span></span></button>`).join('');
+    if (!nmDone && ScrollTrigger.isInViewport(g, .1)) { nmDone = true; gsap.from('#nmGrid .nmc', { opacity: 0, y: 24, duration: .6, ease: 'power3.out', stagger: { each: .025, grid: 'auto', from: 'start' } }); } }
+  function paintBuilt(b) { if (!b.brands) return; $$('#built img[data-brand]').forEach(i => { const u = b.brands[i.dataset.brand]; if (u && i.src !== u) i.src = u; else if (!u) i.remove(); }); }
 
   let numsDone = false;
   function paintNums(b) { const set = (k, v) => { const el = $(`[data-n="${k}"]`); if (el) el.dataset.v = v; }; set('count', b.count); set('liq', b.liq); set('vol', b.vol24);
@@ -135,6 +142,7 @@
       const tw = gsap.to(track, { x: () => -dist(), ease: 'none', scrollTrigger: { refreshPriority: 1, trigger: '#story', start: 'top top', end: () => '+=' + dist(), pin: true, scrub: .6, anticipatePin: 1, invalidateOnRefresh: true, onUpdate: s => { const b = $('#stBar'); if (b) b.style.transform = `scaleX(${s.progress})`; } } });
       $$('.sp').forEach(p => ScrollTrigger.create({ trigger: p, containerAnimation: tw, start: 'left 85%', once: true, onEnter: () => decode(p.querySelector('.sp-t'), 600) })); }
     else $$('.sp').forEach(p => ScrollTrigger.create({ trigger: p, start: 'top 85%', once: true, onEnter: () => decode(p.querySelector('.sp-t'), 600) }));
+    ScrollTrigger.create({ trigger: '#nmGrid', start: 'top 82%', once: true, onEnter: () => { if (S.board && !nmDone) { nmDone = true; gsap.from('#nmGrid .nmc', { opacity: 0, y: 24, duration: .6, ease: 'power3.out', stagger: { each: .025 } }); } } });
     // heatmap tiles pop in the first time the board is seen
     ScrollTrigger.create({ trigger: '#hm', start: 'top 80%', once: true, onEnter: () => { if (S.board && !hmDone) { hmDone = true; paintHeat(S.board); gsap.from('#hm .ht', { opacity: 0, scale: .7, duration: .6, ease: 'back.out(1.6)', stagger: { each: .012 } }); } } });
     // hero: the city recedes as you scroll
@@ -143,7 +151,7 @@
     // headings decode when they arrive
     $$('h2.scr').forEach(h => { h.style.visibility = 'hidden'; ScrollTrigger.create({ trigger: h, start: 'top 86%', once: true, onEnter: () => decode(h, 700) }); });
     // reveal blocks
-    const rv = ['.clocks', '.hm-ctl', '.lede', '.term', '.gap-tbl', '.fnode', '.farrow', '.num', '.rk', '.faq details', '.tok', '.wk-legend', '.wk-hol', '#gap .fine'];
+    const rv = ['.built', '.clocks', '.hm-ctl', '.lede', '.term', '.gap-tbl', '.fnode', '.farrow', '.num', '.rk', '.faq details', '.tok', '.wk-legend', '.wk-hol', '#gap .fine'];
     rv.forEach(s => $$(s).forEach(el => el.classList.add('rv')));
     ScrollTrigger.batch('.rv', { start: 'top 90%', once: true, onEnter: els => gsap.to(els, { opacity: 1, y: 0, duration: .9, ease: 'power3.out', stagger: .07, overwrite: true }) });
     // numbers count up
@@ -159,8 +167,9 @@
 
   // ---------------------------------------------------------------- go
   buildWeek(); paintWeek(0); loadHours(); setInterval(tick, 1000); setInterval(loadHours, 10 * 60e3);
-  X.on(b => { paintTape(b); paintGap(b); paintNums(b); paintHeat(b); $$('[data-live=count]').forEach(e => e.textContent = b.count); });
+  X.on(b => { paintTape(b); paintGap(b); paintNums(b); paintHeat(b); paintNames(b); paintBuilt(b); $$('[data-live=count]').forEach(e => e.textContent = b.count); });
   $('#hmCtl').addEventListener('click', e => { const bt = e.target.closest('button'); if (!bt) return; hmMode = bt.dataset.c; $$('#hmCtl button').forEach(x => x.classList.toggle('on', x === bt)); paintHeat(S.board); });
+  $('#nmGrid').addEventListener('click', e => { const t = e.target.closest('[data-m]'); if (!t) return; X.select(t.dataset.m); const tt = $('#terminal'); lenis ? lenis.scrollTo(tt, { offset: -64 }) : tt.scrollIntoView({ behavior: 'smooth' }); });
   $('#hm').addEventListener('click', e => { const t = e.target.closest('[data-m]'); if (!t) return; X.select(t.dataset.m); const tt = $('#terminal'); lenis ? lenis.scrollTo(tt, { offset: -64 }) : tt.scrollIntoView({ behavior: 'smooth' }); });
   addEventListener('resize', () => { clearTimeout(paintHeat.t); paintHeat.t = setTimeout(() => S.board && paintHeat(S.board), 200); });
   $('#gapTbl').addEventListener('click', e => { const r = e.target.closest('[data-m]'); if (!r) return; X.select(r.dataset.m); const t = $('#terminal'); lenis ? lenis.scrollTo(t, { offset: -64 }) : t.scrollIntoView({ behavior: 'smooth' }); });
