@@ -42,7 +42,8 @@ async function prices(mints) { const o = {};
 // the board: live price, 24h move, liquidity, and the gap between the on-chain price and the reference price of the real share
 const board = () => memo('board', 20000, async () => {
   const U = await universe(), mints = U.map(s => s.mint);
-  const [S, P] = await Promise.all([memo('search', 120000, () => search([SOL, ...mints])), prices([SOL, ...mints])]);
+  const JUPM = 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN', PYTHM = 'HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3';
+  const [S, P] = await Promise.all([memo('search', 120000, () => search([SOL, JUPM, PYTHM, ...mints])), prices([SOL, ...mints])]);
   const rows = U.map(s => { const a = S[s.mint] || {}, p = P[s.mint] || {}; const usd = p.usd ?? a.usd ?? null, ref = p.ref;
     return { sym: s.sym, tok: s.tok, name: s.name, mint: s.mint, kind: s.kind, icon: a.icon || s.icon || `https://xstocks-metadata.backed.fi/logos/tokens/${s.tok}.png`, decimals: a.decimals ?? p.decimals ?? 8,
       usd, ch24: p.ch24 ?? a.ch24 ?? null, liq: p.liq ?? a.liq ?? null, vol24: a.vol24 ?? null, holders: a.holders ?? null, traders24: a.traders24 ?? null,
@@ -50,7 +51,8 @@ const board = () => memo('board', 20000, async () => {
     .filter(r => r.usd && (r.liq || 0) >= MIN_LIQ).sort((a, b) => (b.liq || 0) - (a.liq || 0));
   if (!rows.length) throw new Error('no prices right now');
   const sol = (P[SOL] && P[SOL].usd) || (S[SOL] && S[SOL].usd) || null;
-  return { at: Date.now(), sol, count: rows.length, listed: U.length, liq: rows.reduce((t, r) => t + (r.liq || 0), 0), vol24: rows.reduce((t, r) => t + (r.vol24 || 0), 0), holders: rows.reduce((t, r) => t + (r.holders || 0), 0), stocks: rows }; });
+  const brands = { solana: (S[SOL] || {}).icon || null, jupiter: (S[JUPM] || {}).icon || null, pyth: (S[PYTHM] || {}).icon || null };
+  return { at: Date.now(), brands, sol, count: rows.length, listed: U.length, liq: rows.reduce((t, r) => t + (r.liq || 0), 0), vol24: rows.reduce((t, r) => t + (r.vol24 || 0), 0), holders: rows.reduce((t, r) => t + (r.holders || 0), 0), stocks: rows }; });
 
 // ---------------------------------------------------------------- candles: the most liquid pool, from GeckoTerminal
 const TF = { '15m': ['minute', 15, 200], '1h': ['hour', 1, 200], '4h': ['hour', 4, 180], '1d': ['day', 1, 180] };
