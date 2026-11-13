@@ -34,10 +34,11 @@
   const etLabel = ms => { const p = et(ms); return `${DAYN[p.wd]} ${String(p.h).padStart(2, '0')}:${String(p.mi).padStart(2, '0')} et`; };
 
   // ================================================================ shared state
-  const S = { board: null, sel: null, tf: '1h', side: 'buy', unit: 'SOL', slip: 100, wallet: null, provider: null, bag: null, quote: null, subs: [], sort: 'liq', q: '' };
+  const LS = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }, SV = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { } };
+  const S = { fav: new Set(LS('st0x-fav', [])), alerts: LS('st0x-alerts', []), board: null, sel: null, tf: '1h', side: 'buy', unit: 'SOL', slip: 100, wallet: null, provider: null, bag: null, quote: null, subs: [], sort: 'liq', q: '' };
   window.S0 = { S, et, nyse, dur, etLabel, openAt, setSchedule, MKT, HOLNAME, usd, big, pct, cls, num, esc, toast, on: f => S.subs.push(f), select: m => select(m), connect: () => openWallets() };
 
-  async function loadBoard() { try { const b = await getJ(API + '?a=board'); const prev = S.board; S.board = b; paintList(prev); paintBar(); if (!S.sel) select(pickDefault()); else paintSel(); S.subs.forEach(f => { try { f(b); } catch (e) { console.error(e); } }); }
+  async function loadBoard() { try { const b = await getJ(API + '?a=board'); const prev = S.board; S.board = b; paintList(prev); paintBar(); if (!S.sel) select(pickDefault()); else paintSel(); S.subs.forEach(f => { try { f(b); } catch (e) { console.error(e); } }); checkAlerts(); }
     catch (e) { if (!S.board) $('#wlList').innerHTML = `<div class="empty">could not reach the board (${esc(e.message)}). retrying…</div>`; } }
   const pickDefault = () => { const L = S.board.stocks; return (L.find(s => s.sym === 'NVDA') || L[0]).mint; };
   const bySym = t => { if (!S.board) return null; const k = String(t || '').toUpperCase().replace(/^\$/, ''); return S.board.stocks.find(s => s.sym === k || s.tok.toUpperCase() === k || s.sym === k.replace(/X$/, '')) || null; };
@@ -45,10 +46,11 @@
 
   // ================================================================ watchlist
   function sorted() { const L = S.board.stocks.slice(), q = S.q.trim().toLowerCase(); const f = q ? L.filter(s => s.sym.toLowerCase().includes(q) || s.name.toLowerCase().includes(q) || s.tok.toLowerCase().includes(q)) : L;
-    if (S.sort === 'ch') f.sort((a, b) => (b.ch24 ?? -1e9) - (a.ch24 ?? -1e9)); else if (S.sort === 'gap') f.sort((a, b) => Math.abs(b.gap ?? 0) - Math.abs(a.gap ?? 0)); return f; }
+    if (S.sort === 'ch') f.sort((a, b) => (b.ch24 ?? -1e9) - (a.ch24 ?? -1e9)); else if (S.sort === 'gap') f.sort((a, b) => Math.abs(b.gap ?? 0) - Math.abs(a.gap ?? 0));
+    return [...f.filter(s => S.fav.has(s.mint)), ...f.filter(s => !S.fav.has(s.mint))]; }
   function paintList(prev) { if (!S.board) return; const P = prev ? Object.fromEntries(prev.stocks.map(s => [s.mint, s.usd])) : {}; const L = sorted();
     $('#wlList').innerHTML = L.length ? L.map(s => { const fl = P[s.mint] && s.usd !== P[s.mint] ? (s.usd > P[s.mint] ? ' flash-u' : ' flash-d') : '';
-      return `<button class="wr${s.mint === S.sel ? ' sel' : ''}${fl}" data-m="${s.mint}"><span class="nm"><img src="${esc(s.icon)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"><span><b>${esc(s.sym)}</b><small>${esc(s.name)}</small></span></span><span class="px">${usd(s.usd)}</span><span class="c ${cls(s.ch24)}">${pct(s.ch24)}</span></button>`; }).join('') : '<div class="empty">nothing matches.</div>'; }
+      return `<button class="wr${s.mint === S.sel ? ' sel' : ''}${fl}" data-m="${s.mint}"><span class="nm"><img src="${esc(s.icon)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"><span><b>${esc(s.sym)}</b>${S.fav.has(s.mint) ? '<span class="st">★</span>' : ''}<small>${esc(s.name)}</small></span></span><span class="px">${usd(s.usd)}</span><span class="c ${cls(s.ch24)}">${pct(s.ch24)}</span></button>`; }).join('') : '<div class="empty">nothing matches.</div>'; }
   function paintBar() { const b = S.board; $('#tbSol').textContent = 'sol ' + usd(b.sol, 2); $('#tbCount').textContent = b.count + ' stocks'; }
 
   // ================================================================ selection + chart
@@ -56,11 +58,11 @@
   function paintSel() { const s = byMint(S.sel); if (!s) return; $('#chIcon').src = s.icon; $('#chSym').textContent = s.tok; $('#chName').textContent = s.name + ' · ' + s.sym;
     $('#chPx').textContent = usd(s.usd); const c = $('#chCh'); c.textContent = pct(s.ch24) + ' 24h'; c.className = cls(s.ch24);
     $('#chMeta').innerHTML = [['liquidity', big(s.liq)], ['24h volume', big(s.vol24)], ['holders', s.holders ? num(s.holders, 0) : '—'], ['share price', s.ref ? usd(s.ref) : '—'], ['gap', `<span class="${cls(s.gap)}">${pct(s.gap)}</span>`]].map(([k, v]) => `<span>${k} <b>${v}</b></span>`).join('');
-    paintTicket(); }
+    $('#chStar').textContent = S.fav.has(s.mint) ? '[ ★ ]' : '[ ☆ ]'; $('#chStar').classList.toggle('on', S.fav.has(s.mint)); paintSince(); paintTicket(); }
   let CH = { rows: [], hover: -1 }, chartReq = 0;
   async function loadCandles() { const id = ++chartReq, s = byMint(S.sel); $('#chMsg').textContent = 'loading candles…'; $('#chMsg').style.display = '';
     try { const j = await getJ(`${API}?a=candles&mint=${S.sel}&tf=${S.tf}`); if (id !== chartReq) return; CH = { rows: j.rows, hover: -1, tf: j.tf, dex: j.dex };
-      $('#chSrc').textContent = j.rows.length ? `${j.rows.length} candles · ${j.dex || 'pool'} · geckoterminal` : ''; $('#chMsg').style.display = j.rows.length ? 'none' : ''; if (!j.rows.length) $('#chMsg').textContent = `no ${S.tf} candles for ${s.tok} yet`; drawChart(); }
+      $('#chSrc').textContent = j.rows.length ? `${j.rows.length} candles · ${j.dex || 'pool'} · geckoterminal` : ''; $('#chMsg').style.display = j.rows.length ? 'none' : ''; if (!j.rows.length) $('#chMsg').textContent = `no ${S.tf} candles for ${s.tok} yet`; drawChart(); paintSince(); }
     catch (e) { if (id !== chartReq) return; CH = { rows: [], hover: -1 }; drawChart(); $('#chMsg').textContent = 'candles unavailable: ' + e.message; $('#chMsg').style.display = ''; } }
   const TFS = { '15m': 900, '1h': 3600, '4h': 14400, '1d': 86400 };
   function closedAt(t) { // seconds: is the whole candle outside a NYSE session?
@@ -129,7 +131,7 @@
 
   // ================================================================ wallets
   const WALLETS = [['Phantom', () => window.phantom && window.phantom.solana, 'https://phantom.com/download'], ['Solflare', () => window.solflare && window.solflare.isSolflare && window.solflare, 'https://solflare.com/download'], ['Backpack', () => window.backpack, 'https://backpack.app/download']];
-  function openWallets() { $('#wmList').innerHTML = WALLETS.map(([n, f]) => `<button class="mw" data-w="${n}">${n}<span>${f() ? 'detected' : 'install'}</span></button>`).join(''); $('#wm').hidden = false; }
+  function openWallets() { const box = $('#wm .mbox'); box.classList.remove('wide'); box.querySelector('.mh b').textContent = 'connect a wallet'; const fn = box.querySelector(':scope > .fine'); if (fn) fn.hidden = false; $('#wmList').innerHTML = WALLETS.map(([n, f]) => `<button class="mw" data-w="${n}">${n}<span>${f() ? 'detected' : 'install'}</span></button>`).join(''); $('#wm').hidden = false; }
   async function connectWith(n) { const w = WALLETS.find(x => x[0] === n), p = w && w[1](); if (!p) { window.open(w[2], '_blank', 'noopener'); return; }
     try { const r = await p.connect(); onConnect(((r && r.publicKey) || p.publicKey).toString(), p); $('#wm').hidden = true; } catch { toast('connection cancelled'); } }
   function onConnect(pk, p) { S.wallet = pk; S.provider = p; if (p.on && !p._st0x) { p._st0x = 1; try { p.on('accountChanged', k => k ? onConnect(k.toString(), p) : disconnect()); } catch { } }
@@ -157,10 +159,51 @@
     catch (e) { const m = /reject|cancel|denied|declined/i.test(e.message || '') ? 'cancelled in wallet' : (e.message || 'something went wrong'); log(m, 'er'); toast(m); }
     S.quote = null; requote(); }
 
+
+  // ================================================================ since the bell: what the token did while nyse was shut (or since today's open)
+  function sinceClose() { const rows = CH.rows; if (!rows || rows.length < 3 || S.tf === '1d') return null; const s = byMint(S.sel); if (!s || !s.usd) return null; const n = nyse();
+    if (!n.open) { for (let i = rows.length - 1; i >= 0; i--) if (!closedAt(rows[i].t)) { const at = (rows[i].t + TFS[S.tf]) * 1000; return { kind: 'closed', at, px: rows[i].c, ch: (s.usd / rows[i].c - 1) * 100 }; } return null; }
+    let i = rows.length - 1; while (i > 0 && !closedAt(rows[i - 1].t)) i--; if (closedAt(rows[i].t)) return null; return { kind: 'open', at: rows[i].t * 1000, px: rows[i].o, ch: (s.usd / rows[i].o - 1) * 100 }; }
+  function paintSince() { const m = $('#chMeta'); if (!m) return; const old = m.querySelector('.since'); if (old) old.remove(); const v = sinceClose(); if (!v) return;
+    const el = document.createElement('span'); el.className = 'since'; el.innerHTML = `${v.kind === 'closed' ? 'since nyse closed' : 'since the open'} (${etLabel(v.at)}) <b class="${cls(v.ch)}">${pct(v.ch)}</b>`; m.prepend(el); }
+
+  // ================================================================ alerts: kept in this browser, checked on every refresh
+  function saveAlerts() { SV('st0x-alerts', S.alerts); }
+  function beep() { try { const A = new (window.AudioContext || window.webkitAudioContext)(), o = A.createOscillator(), g = A.createGain(); o.type = 'square'; o.frequency.value = 880; g.gain.value = .04; o.connect(g); g.connect(A.destination); o.start(); o.frequency.setValueAtTime(1320, A.currentTime + .09); o.stop(A.currentTime + .2); } catch { } }
+  function addAlert(s, op, px) { const a = { id: Date.now(), mint: s.mint, tok: s.tok, op, px }; S.alerts.push(a); saveAlerts();
+    try { if (window.Notification && Notification.permission === 'default') Notification.requestPermission(); } catch { } return a; }
+  function checkAlerts() { if (!S.board || !S.alerts.length) return; const hit = [];
+    S.alerts = S.alerts.filter(a => { const s = byMint(a.mint); if (!s || !s.usd) return true; const ok = a.op === '>' ? s.usd >= a.px : s.usd <= a.px; if (ok) hit.push([a, s]); return !ok; });
+    if (!hit.length) return; saveAlerts();
+    for (const [a, s] of hit) { const m = `${a.tok} is ${a.op === '>' ? 'above' : 'below'} ${usd(a.px)}: now ${usd(s.usd)}${nyse().open ? '' : ' (nyse is closed)'}`; log('alert · ' + m, 'ok'); toast('alert · ' + m, 6000); beep();
+      try { if (window.Notification && Notification.permission === 'granted') new Notification('st0x · ' + a.tok, { body: m, icon: '/icon-512.png' }); } catch { } } }
+
+  // ================================================================ share card: a png of the live numbers, for X
+  function shareCard() { const s = byMint(S.sel); if (!s) return; const W = 1200, H = 630, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); const n = nyse();
+    x.fillStyle = '#fff'; x.fillRect(0, 0, W, H); x.fillStyle = '#e6eae8'; for (let gy = 30; gy < H; gy += 24) for (let gx = 30; gx < W; gx += 24) x.fillRect(gx, gy, 2, 2);
+    const F = (w, z) => `${w} ${z}px JB, ui-monospace, monospace`;
+    x.font = F(800, 40); x.fillStyle = '#0d0f0e'; x.fillText('st', 60, 92); let w = x.measureText('st').width; x.fillStyle = '#12a150'; x.fillText('0', 60 + w, 92); w += x.measureText('0').width; x.fillStyle = '#0d0f0e'; x.fillText('x', 60 + w, 92);
+    const st = `nyse ${n.open ? 'open' : 'closed'} · st0x open · ${etLabel(Date.now())}`; x.font = F(700, 20); const sw = x.measureText(st).width; x.fillStyle = '#f6f8f7'; x.beginPath(); x.roundRect(W - 60 - sw - 44, 58, sw + 44, 44, 22); x.fill();
+    x.fillStyle = n.open ? '#12a150' : '#dc2a2a'; x.beginPath(); x.arc(W - 60 - sw - 22, 80, 6, 0, 7); x.fill(); x.fillStyle = '#0d0f0e'; x.fillText(st, W - 60 - sw - 8, 87);
+    x.font = F(800, 120); x.fillStyle = '#0d0f0e'; x.fillText(s.tok, 56, 250); x.font = F(700, 64); x.fillText(usd(s.usd), 60, 340);
+    const pw = x.measureText(usd(s.usd)).width; x.font = F(800, 34); x.fillStyle = s.ch24 >= 0 ? '#12a150' : '#dc2a2a'; x.fillText(pct(s.ch24) + ' 24h', 60 + pw + 26, 338);
+    x.font = F(500, 22); x.fillStyle = '#383e3b'; if (s.ref) { x.fillText(`token ${usd(s.usd)} · share ${usd(s.ref)}`, 60, 400); x.fillText(`gap ${pct(s.gap)} vs the real share`, 60, 432); } else x.fillText(`${s.name} · on solana`, 60, 400);
+    const v = sinceClose(); if (v) { x.fillStyle = v.ch >= 0 ? '#12a150' : '#dc2a2a'; x.font = F(700, 24); x.fillText(`${v.kind === 'closed' ? 'since nyse closed' : 'since the open'}: ${pct(v.ch)}`, 60, 476); }
+    // mini chart of the last candles, nyse-closed hours tinted
+    const R = (CH.rows || []).slice(-72); if (R.length > 4) { const X0 = 680, Y0 = 150, CW = 460, CHh = 300, lo = Math.min(...R.map(r => r.l)), hi = Math.max(...R.map(r => r.h)), stp = CW / R.length, Y = p => Y0 + (hi - p) / (hi - lo || 1) * CHh;
+      R.forEach((r, i) => { if (closedAt(r.t)) { x.fillStyle = '#eefaf3'; x.fillRect(X0 + i * stp, Y0 - 10, stp + .5, CHh + 20); } });
+      R.forEach((r, i) => { const col = r.c >= r.o ? '#12a150' : '#dc2a2a', cx = X0 + i * stp + stp / 2; x.fillStyle = col; x.fillRect(cx - 1, Y(r.h), 2, Math.max(1, Y(r.l) - Y(r.h))); const a = Y(Math.max(r.o, r.c)), b = Y(Math.min(r.o, r.c)); x.fillRect(cx - stp * .32, a, stp * .64, Math.max(2, b - a)); });
+      x.font = F(600, 16); x.fillStyle = '#878f8b'; x.fillText(`${S.tf} candles · green = nyse closed, still trading`, X0, Y0 + CHh + 40); }
+    x.fillStyle = '#0d0f0e'; x.fillRect(0, H - 70, W, 70); x.font = F(700, 22); x.fillStyle = '#fff'; x.fillText('wall street closes at 4pm. st0x doesn\'t.', 60, H - 28); x.fillStyle = '#7ee2a6'; const host = location.host; x.fillText(host, W - 60 - x.measureText(host).width, H - 28);
+    const url = c.toDataURL('image/png'), text = `${s.tok} at ${usd(s.usd)}${n.open ? '' : ' while nyse is closed'}${s.gap != null ? `. gap ${pct(s.gap)} vs the share` : ''}. trading 24/7 on st0x`;
+    $('#wmList').innerHTML = ''; const box = $('#wm .mbox'); box.classList.add('wide'); box.querySelector('.mh b').textContent = 'share ' + s.tok;
+    $('#wmList').innerHTML = `<img class="shot" src="${url}" alt="share card"><div class="mrow"><a class="btn" download="st0x-${esc(s.tok)}.png" href="${url}">[ download png ]</a><a class="btn ghost" target="_blank" rel="noopener" href="https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(location.origin)}">[ post on 𝕏 ]</a></div><p class="fine" style="margin-top:10px">download the card, then attach it to your post.</p>`;
+    box.querySelector('.fine:last-child') && (box.querySelector(':scope > .fine').hidden = true); $('#wm').hidden = false; }
+
   // ================================================================ console
   const hist = []; let hi = 0, pending = null;
   function log(html, c, raw) { const p = document.createElement('p'); p.className = c || ''; p.innerHTML = raw ? html : esc(html); $('#conLog').appendChild(p); $('#conLog').scrollTop = 1e9; return p; }
-  const HELP = [['buy nvda 0.1', 'buy NVDAx with 0.1 SOL (add usdc to pay in USDC, or $20)'], ['sell tsla 50%', 'sell half your TSLAx (or an amount, or all)'], ['price spy', 'live on-chain price and the real share price'], ['gap', 'the biggest gaps between token and share right now'], ['top', "today's biggest movers"], ['chart aapl 4h', 'open a chart (15m, 1h, 4h, 1d)'], ['hours', 'is nyse open? when does it change?'], ['bag', 'your wallet: SOL, USDC and xStocks'], ['connect / disconnect', 'link or unlink a wallet'], ['clear', 'clear this log']];
+  const HELP = [['buy nvda 0.1', 'buy NVDAx with 0.1 SOL (add usdc to pay in USDC, or $20)'], ['sell tsla 50%', 'sell half your TSLAx (or an amount, or all)'], ['price spy', 'live on-chain price and the real share price'], ['gap', 'the biggest gaps between token and share right now'], ['top', "today's biggest movers"], ['chart aapl 4h', 'open a chart (15m, 1h, 4h, 1d)'], ['hours', 'is nyse open? when does it change?'], ['alert nvda > 170', 'ping me when a price crosses (kept in this browser)'], ['alerts / unalert 1', 'list or remove alerts'], ['fav nvda', 'star a stock; starred ones sit on top'], ['share', 'make a png card of the open stock for X'], ['since', 'what it did since nyse closed (or opened)'], ['bag', 'your wallet: SOL, USDC and xStocks'], ['connect / disconnect', 'link or unlink a wallet'], ['clear', 'clear this log']];
   function stockArg(t) { const s = bySym(t); if (!s) { log(`unknown stock "${t}". try nvda, tsla, spy, aapl…`, 'er'); return null; } return s; }
   async function run(line) { const raw = line.trim(); if (!raw) return; log(raw, 'me'); hist.push(raw); hi = hist.length; const [cmd, ...a] = raw.toLowerCase().split(/\s+/);
     if (pending && /^(y|yes|sign|ok)$/.test(cmd)) { const p = pending; pending = null; return p(); } if (pending && /^(n|no|cancel)$/.test(cmd)) { pending = null; return log('cancelled.', 'dim'); } pending = null;
@@ -188,6 +231,14 @@
         const act = document.createElement('span'); act.className = 'act'; act.innerHTML = `<button>sign</button><button class="no">cancel</button>`; p.appendChild(act);
         pending = () => { act.remove(); return execute(); }; act.children[0].onclick = () => { if (pending) { const f = pending; pending = null; f(); } }; act.children[1].onclick = () => { pending = null; act.remove(); log('cancelled.', 'dim'); };
         if (!S.wallet) log('type y to connect and sign, or press sign.', 'dim'); else log('type y or press sign to approve it in your wallet.', 'dim'); return; }
+      case 'alert': { const s = stockArg(a[0]); if (!s) return; let op = a[1], px = parseFloat(String(a[2] ?? a[1]).replace('$', ''));
+        if (!(px > 0)) return log('e.g. alert nvda > 170  or  alert tsla < 380', 'dim'); if (op !== '>' && op !== '<') op = px >= s.usd ? '>' : '<';
+        const al = addAlert(s, op, px); return log(`alert set: ${s.tok} ${op} ${usd(px)} (now ${usd(s.usd)}). it fires while this tab is open.`, 'ok'); }
+      case 'alerts': return log(S.alerts.length ? S.alerts.map((x, i) => `${i + 1}. ${x.tok} ${x.op} ${usd(x.px)}`).join('\n') : 'no alerts. try: alert nvda > 170', 'dim');
+      case 'unalert': { if (a[0] === 'all') S.alerts = []; else S.alerts.splice((+a[0] || 0) - 1, 1); saveAlerts(); return log(`${S.alerts.length} alert(s) left.`, 'dim'); }
+      case 'fav': case 'star': { const s = stockArg(a[0]); if (!s) return; S.fav.has(s.mint) ? S.fav.delete(s.mint) : S.fav.add(s.mint); SV('st0x-fav', [...S.fav]); paintList(); paintSel(); return log(`${s.tok} ${S.fav.has(s.mint) ? 'starred' : 'unstarred'}.`, 'dim'); }
+      case 'share': { if (a[0]) { const s = stockArg(a[0]); if (!s) return; select(s.mint); setTimeout(shareCard, 900); return; } return shareCard(); }
+      case 'since': { const v = sinceClose(); return log(v ? `${byMint(S.sel).tok} ${v.kind === 'closed' ? 'since nyse closed' : 'since the open'} (${etLabel(v.at)}): ${pct(v.ch)}` : 'not enough candles for that yet (try the 1h or 15m view).', 'dim'); }
       default: return log(`unknown command "${cmd}". type help.`, 'er'); } }
   function hint() { const v = $('#conIn').value, m = /^(buy|sell|price|p|chart|c|gap)\s+(\S+)$/i.exec(v); if (!m || !S.board) { $('#conHint').textContent = ''; return; } const k = m[2].toUpperCase(), s = S.board.stocks.find(x => x.sym.startsWith(k)); $('#conHint').textContent = s && s.sym !== k ? `tab → ${s.sym.toLowerCase()}` : ''; }
 
@@ -211,12 +262,16 @@
     $('#navWallet').addEventListener('click', () => S.wallet ? disconnect() : openWallets());
     $('#wmList').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (b) connectWith(b.dataset.w); });
     $('#wmX').addEventListener('click', () => $('#wm').hidden = true); $('#wm').addEventListener('click', e => { if (e.target.id === 'wm') $('#wm').hidden = true; });
+    $('#chStar').addEventListener('click', () => { const m = S.sel; S.fav.has(m) ? S.fav.delete(m) : S.fav.add(m); SV('st0x-fav', [...S.fav]); paintList(); paintSel(); });
+    $('#chAlert').addEventListener('click', () => { const s = byMint(S.sel); if (!s) return; const t = +(s.usd * 1.02).toPrecision(4); $('#conIn').value = `alert ${s.sym.toLowerCase()} > ${t}`; $('#conIn').focus({ preventScroll: true }); log('edit the price and press enter to set the alert.', 'dim'); });
+    $('#chShare').addEventListener('click', shareCard);
+    addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); $('#terminal').scrollIntoView({ block: 'center' }); $('#conIn').focus({ preventScroll: true }); } });
     const ci = $('#conIn'); ci.addEventListener('input', hint);
     ci.addEventListener('keydown', e => { if (e.key === 'Enter') { const v = ci.value; ci.value = ''; hint(); run(v); }
       else if (e.key === 'ArrowUp') { if (hi > 0) { hi--; ci.value = hist[hi] || ''; } e.preventDefault(); } else if (e.key === 'ArrowDown') { hi = Math.min(hist.length, hi + 1); ci.value = hist[hi] || ''; e.preventDefault(); }
       else if (e.key === 'Tab') { const m = /^(\S+\s+)(\S+)$/.exec(ci.value); if (m && S.board) { const s = S.board.stocks.find(x => x.sym.startsWith(m[2].toUpperCase())); if (s) { ci.value = m[1] + s.sym.toLowerCase() + ' '; hint(); } } e.preventDefault(); } });
     $('#con').addEventListener('click', e => { if (!e.target.closest('button,a')) ci.focus({ preventScroll: true }); });
-    log('st0x terminal. live xStocks on solana, any hour, any day.', 'dim'); log('type help for commands. try: price nvda · gap · buy nvda 0.1', 'dim');
+    log('st0x terminal. live xStocks on solana, any hour, any day.', 'dim'); log('type help for commands. try: price nvda · gap · since · alert tsla > 400 · buy nvda 0.1 · ctrl/⌘ k jumps here', 'dim');
     // silent reconnect for wallets the visitor already trusted
     setTimeout(async () => { const p = window.phantom && window.phantom.solana; if (p && p.connect) { try { const r = await p.connect({ onlyIfTrusted: true }); if (r && r.publicKey) onConnect(r.publicKey.toString(), p); } catch { } } }, 900);
   }

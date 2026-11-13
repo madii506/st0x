@@ -64,19 +64,47 @@
       setTimeout(tick, 650); };
     setTimeout(tick, 1200); return () => { stop = true; }; }
 
-  // the intro: a cursor, a ripple of characters, the city assembling from the street up, windows lighting, no words
-  function intro(cv, g, done) { const x = setup(cv, g), T0 = performance.now(), cx = g.W / 2, cy = g.H / 2, maxR = Math.hypot(g.W, g.H) / 2;
-    for (const c of g.cells) { c.at = 700 + (1 - c.r / g.R) * 1250 + hash(c.r, c.c, 5) * 380 + Math.abs(c.c / g.C - .5) * 260; if (c.t === 'lit') c.at += 700 + hash(c.c, c.r, 9) * 600; }
-    for (const s of g.sky) s.at = s.t === 'ground' ? 600 + Math.abs(s.c / g.C - .5) * 700 : 2200 + hash(s.r, s.c, 2) * 700;
-    const ring = []; for (let i = 0; i < 900; i++) { const a = Math.random() * 6.283, k = Math.random(); ring.push({ a, k, ch: SCR[Math.floor(Math.random() * SCR.length)] }); }
-    let raf = 0, end = 3300, skip = false;
+  // the intro, no words: a cursor draws a market. the bell rings, the old market greys out and stops.
+  // the line keeps climbing in green. then the chart falls into the street and the city builds itself.
+  function intro(cv, g, done, cur) { const x = setup(cv, g), T0 = performance.now();
+    const c0 = Math.round(g.C * .1), c1 = Math.round(g.C * .9), step = 3, N = Math.floor((c1 - c0) / step), iBell = Math.round(N * .58);
+    const mid = g.R * .45, amp = g.R * .27;
+    // the price path: a restless week, the bell, then a clean climb
+    let v = 0, seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647; const P = [];
+    for (let i = 0; i < N; i++) { const after = i > iBell, up = after ? rnd() < .82 : rnd() < .54, body = .25 + rnd() * (after ? 1.1 : .9);
+      const o = v, cl = up ? v + body : v - body * (after ? .55 : .95), hi = Math.max(o, cl) + rnd() * .6, lo = Math.min(o, cl) - rnd() * .6; P.push({ o, cl, hi, lo, up, after }); v = cl; }
+    const mn = Math.min(...P.map(p => p.lo)), mx = Math.max(...P.map(p => p.hi)), row = p => mid + amp - (p - mn) / (mx - mn) * amp * 2;
+    const DRAW0 = 650, DRAW = 1650, PAUSE = 380, tOf = i => DRAW0 + i * (DRAW / N) + (i > iBell ? PAUSE : 0), tBell = tOf(iBell) + 40, FALL = tOf(N - 1) + 420;
+    P.forEach((p, i) => { p.t = tOf(i); p.fall = FALL + (i / N) * 520 + rnd() * 120; p.vx = (rnd() - .5) * 40; });
+    const CITY0 = FALL + 120;
+    for (const c of g.cells) { c.at = CITY0 + (1 - c.r / g.R) * 1050 + hash(c.r, c.c, 5) * 320 + Math.abs(c.c / g.C - .5) * 220; if (c.t === 'lit') c.at += 800 + hash(c.c, c.r, 9) * 700; }
+    for (const s of g.sky) s.at = s.t === 'ground' ? CITY0 - 200 + Math.abs(s.c / g.C - .5) * 600 : CITY0 + 1100 + hash(s.r, s.c, 2) * 700;
+    const end = CITY0 + 2050; let raf = 0, skip = false;
+    const cx0 = g.W / 2, cy0 = g.H / 2; const moveCur = (px, py) => { if (!cur) return; cur.style.left = px + 'px'; cur.style.top = py + 'px'; };
+    const colOf = (p, dim) => p.after ? (p.up ? G : '#dc2a2a') : (p.up ? (dim ? '#c3c9c6' : '#3a403d') : (dim ? '#dde2df' : '#a9b0ac'));
+    const candle = (i, p, alpha, dy, dim) => { const cx = (c0 + i * step) * g.cw, w = g.cw * 1.7, rt = row(p.hi), rb = row(p.lo), bt = row(Math.max(p.o, p.cl)), bb = row(Math.min(p.o, p.cl));
+      x.globalAlpha = alpha; x.fillStyle = colOf(p, dim); x.fillRect(cx + g.cw * .08 + w / 2 - 1, rt * g.ch + dy, 2, Math.max(1, (rb - rt) * g.ch));
+      x.fillRect(cx + g.cw * .08, bt * g.ch + dy, w, Math.max(g.ch * .35, (bb - bt) * g.ch)); };
     const frame = now => { const t = skip ? end : now - T0; x.clearRect(0, 0, g.W, g.H);
-      // ripple of characters out of the cursor
-      if (t > 320 && t < 1700) { const p = (t - 320) / 1380, rad = p * maxR * 1.05; x.fillStyle = '#9aa39f';
-        for (const q of ring) { const rr = rad - q.k * 90; if (rr < 0) continue; const fade = (1 - p) * (1 - q.k) * .7; if (fade <= .02) continue; x.globalAlpha = fade; x.fillText(Math.random() < .08 ? SCR[Math.floor(Math.random() * SCR.length)] : q.ch, cx + Math.cos(q.a) * rr, cy + Math.sin(q.a) * rr * .62); } }
+      // the cursor: blinks in the middle, then slides to where the chart starts
+      if (t < DRAW0) { const k = Math.max(0, (t - 420) / 230), sx = c0 * g.cw, sy = row(0) * g.ch; moveCur(cx0 + (sx - cx0) * k * k, cy0 + (sy - cy0) * k * k); }
+      // the bell: a dashed line drops through the chart
+      if (t > tBell && t < FALL + 500) { const bx = (c0 + iBell * step + 1) * g.cw + g.cw / 2, k = Math.min(1, (t - tBell) / 220), fade = t > FALL ? 1 - (t - FALL) / 500 : 1;
+        x.globalAlpha = .9 * fade; x.fillStyle = '#0d0f0e'; for (let y = 0; y < g.H * k; y += 12) x.fillRect(bx - .75, y, 1.5, 6);
+        if (t - tBell < 380) { const r = (t - tBell) / 380; x.globalAlpha = (1 - r) * .5; x.strokeStyle = '#0d0f0e'; x.lineWidth = 1.5; x.beginPath(); x.arc(bx, row(P[iBell].cl) * g.ch, 10 + r * 90, 0, 6.283); x.stroke(); } }
+      // candles: drawn one by one, then they fall into the street
+      let head = null;
+      for (let i = 0; i < N; i++) { const p = P[i]; if (t < p.t) break; head = i; const dim = !p.after && t > tBell + 200;
+        if (t < p.fall) { const pop = Math.min(1, (t - p.t) / 120); candle(i, p, pop, 0, dim); }
+        else { const f = (t - p.fall) / 1000, dy = 1400 * f * f, a = 1 - f / .62; if (a <= 0) continue;
+          if (a < .75 && hash(i, Math.floor(t / 60), 3) < .5) { x.globalAlpha = a; x.fillStyle = colOf(p, dim); x.fillText(SCR[(hash(i, Math.floor(t / 50), 1) * SCR.length) | 0], (c0 + i * step) * g.cw, row(p.cl) * g.ch + dy); }
+          else candle(i, p, a, dy, dim); } }
+      if (head != null && t < FALL) { const p = P[head]; moveCur((c0 + head * step) * g.cw + g.cw * 1.6, row(p.cl) * g.ch); }
+      if (t >= FALL && t < CITY0 + 600) { const k = Math.min(1, (t - FALL) / 600), e = 1 - Math.pow(1 - k, 3); const p = P[N - 1], fx = (c0 + (N - 1) * step) * g.cw + g.cw * 1.6, fy = row(p.cl) * g.ch; moveCur(fx + (cx0 - fx) * e, fy + (cy0 - fy) * e); }
+      // the city builds from the street up
       for (const s of g.sky) { if (t < s.at) continue; const p = Math.min(1, (t - s.at) / 500); glyph(x, g, s, s.a * p); }
-      for (const c of g.cells) { if (t < c.at) continue; const p = (t - c.at) / 200;
-        if (p < 1) { const k = SCR[Math.floor(Math.random() * SCR.length)]; x.globalAlpha = .55; x.fillStyle = c.t === 'lit' ? G : '#7d8682'; x.fillText(k, c.c * g.cw, (c.r + .8) * g.ch); }
+      for (const c of g.cells) { if (t < c.at) continue; const p = (t - c.at) / 190;
+        if (p < 1) { x.globalAlpha = .55; x.fillStyle = c.t === 'lit' ? G : '#7d8682'; x.fillText(SCR[(Math.random() * SCR.length) | 0], c.c * g.cw, (c.r + .8) * g.ch); }
         else glyph(x, g, c, c.t === 'lit' && p < 3 ? Math.min(1, c.a + .1) : c.a); }
       x.globalAlpha = 1;
       if (t >= end) { done && done(); return; } raf = requestAnimationFrame(frame); };
